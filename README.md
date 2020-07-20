@@ -4,6 +4,8 @@
 
 Just include a line in the header of your website :
 
+(or at the bottom of your body if you want your website to load faster)
+
 ```
 <script type="text/javascript" src="path/of/js/file/recorder.js"></script>
 ```
@@ -29,4 +31,6 @@ The script has a basic configuration, but here is what you can customize:
 
 ### Licences and credits
 
-Because the images we use is free, here is the website where we found it: https://www.flaticon.com/
+Because the images we use are free, here is the websites where we found them:
+- https://www.flaticon.com
+- https://material.io/resources/icons/?style=baseline
