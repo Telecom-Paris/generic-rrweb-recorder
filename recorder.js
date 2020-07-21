@@ -1,7 +1,5 @@
 console.log("Auto loading !");
 
-
-
 // This is the default configuration
 let config = {
 	position: "bottom-right",
@@ -12,13 +10,17 @@ let isDragged = false;
 let isMenuCreated = false;
 let isMenuOpen = false;
 
+//Displayable menu variable
+let div;
+let menuButton;
 let recordButton;
-let replayButton;
 
+//Rrweb variables
 let events = [];
 let isActive;
 let interval;
 
+let screenSize;
 
 function includeScript(file) {
 	var script = document.createElement('script'); 
@@ -30,6 +32,13 @@ function includeScript(file) {
 // This function launch the record of the screen
 function launchRecord() {
 	console.log("This should have launch the recording");
+
+	// Update the style of record button and the onclick function.
+	document.getElementById('recordButton').style.backgroundColor = "white";
+	document.getElementById('recordButton').style.backgroundImage = "url('media/recording32.png')";
+	document.getElementById('recordButton').style.border = "1px solid black";
+	document.getElementById('recordButton').onclick = stopRecord;
+
 	isActive = rrweb.record({
 		emit(event) {
 			// push event into the events array
@@ -41,32 +50,40 @@ function launchRecord() {
 
 // This function launch the record of the screen
 function stopRecord() {
-	console.log("This should have launch the recording");
+
+	// Restore the style and onclick of recordButton
+	document.getElementById('recordButton').style.backgroundColor = "#fdd03b";
+	document.getElementById('recordButton').style.backgroundImage = "url('media/camera32.png')";
+	document.getElementById('recordButton').style.border = "none";
+	document.getElementById('recordButton').onclick = launchRecord;
+
+	console.log("This should have stop the recording");
 	if (isActive)
 		isActive();
 	clearInterval(interval);
+}
 
+// TODO: need to simpilfy this function, maybe remove it
 function createMenu() {
 	console.log("Oh, the menu does not seems to exit, let's create it");
 	//Creating record Button as a child element
-	recordButton = new ButtonHandling(document.body, launchRecord, "?", "");
+	recordButton = new ButtonHandling(div, launchRecord, "recordButton", "", "url('media/camera32.png')");
 	recordButton.createChildButton();
 	isMenuCreated = true;
 }
 
 function openMenu() {
-	if (isDragged == false)
-	{
+	if (isDragged == false) {
 		console.log("Opening the menu");
 		if (!isMenuCreated)
 			createMenu();
 		if (!isMenuOpen) {
+			div.style.height = "150px";
 			recordButton.show();
 			isMenuOpen = true;
-		}
-		else
-		{
+		} else {
 			recordButton.hide();
+			div.style.height = "70px";
 			isMenuOpen = false;
 		}
 	}
@@ -93,9 +110,10 @@ function resetStyle() {
 class ButtonHandling {
 	button;
 
-	constructor(context, func, text, icon) {
+	constructor(context, func, id, text, icon) {
 		this.context = context;
 		this.func = func;
+		this.id = id;
 		this.text = text;
 		this.icon = icon;
 	}
@@ -115,23 +133,23 @@ class ButtonHandling {
 		this.button.type = "button";
 		this.button.value = this.text;
 		this.button.onclick = this.func;
+		this.button.id = this.id;
 		this.button.style.borderRadius = "50%";
 		this.button.style.border = "none";
+		this.button.style.backgroundImage = this.icon;
+		this.button.classList.add("rr-block");
+		this.button.style.backgroundRepeat = "no-repeat";
+		this.button.style.backgroundPosition = "center";
 	}
 
 	createMenuButton() {
 		this.createBasicButton();
-		this.button.id="menuButton";
 		this.button.style.height = "70px";
 		this.button.style.width = "70px";
+		this.button.style.bottom = "0%";
 		this.button.style.backgroundColor = "#d92027";
-		this.button.style.backgroundImage = "url('media/menu32.png')";
-		this.button.style.backgroundRepeat = "no-repeat";
-		this.button.style.backgroundPosition = "center";
-		if (config.movable) {
-			this.button.style.position = "absolute";
-			this.button.style.cursor = "move";
-		}
+		this.button.style.position = "absolute";
+		this.button.style.cursor = "move";
 		this.context.appendChild(this.button);
 	}
 
@@ -139,8 +157,11 @@ class ButtonHandling {
 		this.createBasicButton();
 		this.button.style.height = "50px";
 		this.button.style.width = "50px";
-		this.button.style.backgroundColor = "yellow";
-		this.context.appendChild(this.button);
+		this.button.style.display = "block";
+		this.button.style.margin = "25% auto 15px";
+		this.button.style.backgroundColor = "#fdd03b";
+		this.button.style.cursor = "pointer";
+		this.context.prepend(this.button);
 	}
 }
 
@@ -149,9 +170,9 @@ function finishDragging() {
 }
 
 // The goal of this function is to make a button movable
-function makeButtonMovable() {
+function makeButtonMovable(button) {
 	//Make the button element draggable:
-	dragElement(document.getElementById("menuButton"));
+	dragElement(button);
 
 	function dragElement(elmnt) {
 		var pos1 = 0, pos2 = 0, mouseX = 0, mouseY = 0;
@@ -185,9 +206,14 @@ function makeButtonMovable() {
 			pos2 = mouseY - e.clientY;
 			mouseX = e.clientX;
 			mouseY = e.clientY;
-			// set the element's new position:
-			elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-			elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+			console.log("screenSize.width = " + screenSize.width + " screenSize.height = " + screenSize.height);
+			// set the element's new position, only if not going out of the window:
+			if (elmnt.offsetLeft - pos1 >= 0 && (elmnt.offsetLeft + 70) - pos1 < screenSize.width
+				&& elmnt.offsetTop - pos2 >= 0 && (elmnt.offsetTop + 70) - pos2 < screenSize.height)
+			{
+				elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+				elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+			}
 		}
 
 		function closeDragElement() {
@@ -203,16 +229,30 @@ function makeButtonMovable() {
 }
 
 function createBaseDiv() {
-	
+	var div = document.createElement("div");
+	div.style.width = "70px";
+	div.style.height = "70px";
+	div.style.position = "absolute";
+	document.body.appendChild(div);
+	return div;
 }
 
 window.onload = function() {
+	// This function load rrweb from local.
+	// Can also load from URL
 	includeScript("./rrweb/dist/rrweb.js");
-	createBaseDiv();
+
+	// We create a div in which wi will display all menu element as block
+	div = createBaseDiv();
+
+	// We get the webpage size, avoiding being able to drop the menu out
+	// of the page
+	screenSize = window.screen;
+
 	// We define a button that will launch recording
-	var menuButton = new ButtonHandling(document.body, openMenu, "", "");
+	menuButton = new ButtonHandling(div, openMenu, "menuButton", "", "url('media/menu32.png')");
 	menuButton.createMenuButton();
-	
+
 	if (config.movable)
-		makeButtonMovable();
+		makeButtonMovable(div);
 }

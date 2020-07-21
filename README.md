@@ -17,15 +17,15 @@ The script takes care of the rest.
 The script has a basic configuration, but here is what you can customize:
 - position (default is **"bottom-right"**)
   list of avaibalble position:
--- bottom
--- bottom-right
--- bottom-left
--- top
--- top-right
--- top-left
--- middle
--- middle-left
--- middle-right
+  - bottom
+  - bottom-right
+  - bottom-left
+  - top
+  - top-right
+  - top-left
+  - middle
+  - middle-left
+  - middle-right
 - if the buttons are movable (default is **true**)
 
 
