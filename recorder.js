@@ -117,7 +117,7 @@ function launchRecord() {
 
 			if (areRecordScriptsLoaded) {
 				recorder = new WebAudioRecorder(input, {
-					workerDir: "./recorder/lib/",
+					workerDir: "./scripts/recorder/lib/",
 					encoding: encodingType,
 					numChannel: 2,
 					onEncoderLoading: function(recorder, encodingType) {
@@ -133,6 +133,13 @@ function launchRecord() {
 					soundBlob = blob;
 					console.log(URL.createObjectURL(blob));
 				}
+
+				recorder.setOptions({
+					timeLimit:120,
+					encodeAfterRecord: true,
+					ogg: {quality: 0.5},
+					mp3: {bitRate: 160}
+				});
 
 				recorder.startRecording();
 
