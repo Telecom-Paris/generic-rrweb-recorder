@@ -5,7 +5,6 @@ let config = {
 };
 
 let isDragged = false;
-let isMenuCreated = false;
 let isMenuOpen = false;
 
 //Displayable menu variable
@@ -15,25 +14,23 @@ let pauseButton;
 let downButton;
 
 //Rrweb variables
-let isRrwebLoaded = false;
 let events = [];
 let isActive;
 let interval;
 
 // WebAudioRecorder variables
-let isWebAudioRecorderLoaded = false;
 let recorder;
 let recStream;
 let audioConfig;
 let input, encodingType;
+
+let areRecordScriptsLoaded = false;
 
 //Download variables
 let isJsZipLoaded = false;
 let textData; //code of the webpage download.html
 let eventBlob;
 let soundBlob;
-
-let screenSize;
 
 (function( w ){
 	var loadJS = function( src, cb, ordered ){
@@ -66,51 +63,20 @@ let screenSize;
 	}
 }( typeof global !== "undefined" ? global : this ));
 
-function configureAudio() {
-	navigator.mediaDevices.getUserMedia({audio: true, video:false}).then(function(stream) {
-		console.log("getUserMedia() success, stream created, initializing WebAudioRecorder...");
-
-		audioContext = new AudioContext();
-
-		//update the format
-		console.log("Format: 2 channel mp3 @ " + audioContext.sampleRate / 1000 + "kHz");
-
-		//assign to recStream for later use
-		recStream = stream;
-
-		/* use the stream */
-		input = audioContext.createMediaStreamSource(stream);
-
-		//get the encoding 
-		encodingType = "mp3";
-
-		return {
-			input: input,
-			encoding: encodingType
-		};
-	});
-}
-
 function loadWebAudioRecorder(scriptStatus) {
 		// We include WebAudioRecorder
-		console.log("Je suis aussi dans cette fonction");
-		//includeScript("./recorder/lib/WebAudioRecorder.js", launchRecord);
 		loadJS("./scripts/recorder/lib/WebAudioRecorder.js", function() {
-			// file has loaded
-			isWebAudioRecorderLoaded = true;
+			// Once script has been loaded, launch the rest of the code
+			areRecordScriptsLoaded = true;
 			launchRecord();
 		});
 }
 
 function loadRrweb() {
+	// We make sure this is not a drag, but a click
 	if (!isDragged) {
-		// This function load rrweb from local.
-		// Can also load from URL
-		//includeScript("./rrweb/dist/rrweb.js", loadWebAudioRecorder);
-		console.log("Je suis dans cette fonction");
+		// We include Rrweb
 		loadJS("./scripts/rrweb/dist/rrweb.js", function() {
-			// file has loaded
-			isRrwebLoaded = true;
 			loadWebAudioRecorder();
 		});
 	}
@@ -119,7 +85,7 @@ function loadRrweb() {
 // This function launch the record of the screen
 function launchRecord() {
 	if (!isDragged) {
-		console.log("This should have launch the recording");
+		console.log("Recording has started! ");
 
 		// Update the style of record button and the onclick function.
 		document.getElementById('recordButton').style.backgroundColor = "white";
@@ -149,34 +115,34 @@ function launchRecord() {
 			//get the encoding
 			encodingType = "mp3";
 
-	if (isRrwebLoaded && isWebAudioRecorderLoaded) {
+			if (areRecordScriptsLoaded) {
+				recorder = new WebAudioRecorder(input, {
+					workerDir: "./recorder/lib/",
+					encoding: encodingType,
+					numChannel: 2,
+					onEncoderLoading: function(recorder, encodingType) {
+						console.log("Loading " + encodingType + " encoder...");
+					},
+					onEncoderLoaded: function(recorder, encodingType) {
+						console.log(encodingType + " encoder loaded");
+					}
+				});
 
-		recorder = new WebAudioRecorder(input, {
-				workerDir: "./recorder/lib/",
-				encoding: encodingType,
-				numChannel: 2,
-				onEncoderLoading: function(recorder, encodingType) {
-					console.log("Loading " + encodingType + " encoder...");
-				},
-				onEncoderLoaded: function(recorder, encodingType) {
-					console.log(encodingType + " encoder loaded");
+				recorder.onComplete = function(recorder, blob) {
+					console.log("Encoding complete");
+					soundBlob = blob;
+					console.log(URL.createObjectURL(blob));
 				}
-			});
 
-			recorder.onComplete = function(recorder, blob) {
-				console.log("Encoding complete");
-				soundBlob = blob;
-				console.log(URL.createObjectURL(blob));
-			}
+				recorder.startRecording();
 
-			recorder.startRecording();
-			isActive = rrweb.record({
-				emit(event) {
-					// push event into the events array
-					events.push(event);
-				},
-			});
-			interval = setInterval(function () {console.log(events);}, 1000);
+				isActive = rrweb.record({
+					emit(event) {
+						// push event into the events array
+						events.push(event);
+					},
+				});
+				interval = setInterval(function () {console.log(events);}, 1000);
 			}
 		});
 	}
@@ -203,29 +169,19 @@ function stopRecord() {
 
 	// Set the event as Blob
 	eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
+
 	if (events.length > 2) {
 		div.style.width = "150px";
 		console.log("I can download the page");
-		downButton = new Button(div, downRecord, "downRecord", "", "url('media/down32.png')");
+		downButton = new Button(div, downRecord, "downRecord", "Download your record", 'media/down32.png');
 		downButton.createChildButton();
 		downButton.show();
 	}
 }
 
-// TODO: need to simpilfy this function, maybe remove it
-function createMenu() {
-	console.log("Oh, the menu does not seems to exit, let's create it");
-	//Creating record Button as a child element
-	//pauseButton = new Button(div, pauseRecord, "pauseButton", "", "url('media/pause32.png')");
-	//recordButton.createChildButton();
-	isMenuCreated = true;
-}
-
 function openMenu() {
 	if (isDragged == false) {
 		console.log("Opening the menu");
-		if (!isMenuCreated)
-			createMenu();
 		if (!isMenuOpen) {
 			div.style.width = "150px";
 			//pauseButton.show();
@@ -250,52 +206,51 @@ function saveAs(data, filename)
 		new Blob([data], { type: "application/zip" })
 	);
 
-  // Use download attribute to set set desired file name
-  a.setAttribute("download", filename);
+	// Use download attribute to set set desired file name
+	a.setAttribute("download", filename);
 
-  // Trigger the download by simulating click
-  a.click();
+	// Trigger the download by simulating click
+	a.click();
 
-  // Cleanup
-  window.URL.revokeObjectURL(a.href);
-  document.body.removeChild(a);
+	// Cleanup
+	window.URL.revokeObjectURL(a.href);
+	document.body.removeChild(a);
 }
 
+// This function read a server-local text file
+// (does not work in local due to CORS request not being HTTPS)
 function readTextFile(file)
 {
-    var rawFile = new XMLHttpRequest();
-    rawFile.open("GET", file, false);
-    rawFile.onreadystatechange = function ()
-    {
-        if(rawFile.readyState === 4)
-        {
-            if(rawFile.status === 200 || rawFile.status == 0)
-            {
-                textData = rawFile.responseText;
-            }
-        }
-    }
-    rawFile.send(null);
+	var rawFile = new XMLHttpRequest();
+	rawFile.open("GET", file, false);
+	rawFile.onreadystatechange = function () {
+		if (rawFile.readyState === 4) {
+			if(rawFile.status === 200 || rawFile.status == 0) {
+				textData = rawFile.responseText;
+			}
+		}
+	}
+	rawFile.send(null);
 }
 
 
 // This function launch the download of the record
 function downRecord() {
 	//Load Jszip (minified Because it load faster)
-	includeScript("./jszip/dist/jszip.js", isJsZipLoaded);
+	loadJS("./jszip/dist/jszip.js", function() {
+		let zip = new JSZip();
 
-	let zip = new JSZip();
+		readTextFile("./download.html");
+		// We add thoses files to the zip archive
+		zip.file("download.html", textData);
+		zip.file("data/events.json", eventBlob);
+		zip.file("data/sound.mp3", soundBlob);
 
-	readTextFile("./download.html");
-	// We add thoses files to the zip archive
-	zip.file("download.html", textData);
-	zip.file("data/events.json", eventBlob);
-	zip.file("data/sound.mp3", soundBlob);
-
-	// Once archive has been generated, we can download it
-	zip.generateAsync({type:"blob"})
-	.then(function(content) {
-		saveAs(content, "example.zip");
+		// Once archive has been generated, we can download it
+		zip.generateAsync({type:"blob"})
+		.then(function(content) {
+			saveAs(content, "example.zip");
+		});
 	});
 }
 
@@ -325,7 +280,7 @@ class Button {
 		this.func = func;
 		this.id = id;
 		this.text = text;
-		this.icon = icon;
+		this.icon = "url(" + icon + ")";
 	}
 
 	show() {
@@ -339,13 +294,13 @@ class Button {
 	createBasicButton() {
 		this.button = document.createElement("input");
 		this.button.type = "button";
-		this.button.value = this.text;
 		this.button.onclick = this.func;
 		this.button.id = this.id;
 		this.button.style.borderRadius = "50%";
 		this.button.style.border = "none";
 		this.button.style.backgroundImage = this.icon;
 		this.button.classList.add("rr-block");
+		this.button.title = this.text;
 		this.button.style.backgroundRepeat = "no-repeat";
 		this.button.style.backgroundPosition = "center";
 	}
@@ -452,7 +407,7 @@ window.onload = function() {
 	div = createBaseDiv();
 
 	// We define a button that will launch recording
-	recordButton = new Button(div, loadRrweb, "recordButton", "", "url('media/camera32.png')");
+	recordButton = new Button(div, loadRrweb, "recordButton", "Start recording! ", 'media/camera32.png');
 	recordButton.createMenuButton();
 
 	if (config.movable)
