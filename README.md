@@ -1,5 +1,7 @@
 # Generic-rrweb-recorder
 
+For the css version, please check [here](css_version/README.md).
+
 ### How to install it ?
 
 Just include a line in the header of your website :
@@ -15,7 +17,7 @@ The script takes care of the rest.
 ### Customize it as you want:
 
 The script has a basic configuration, but here is what you can customize:
-- position (default is **"bottom-right"**)
+- position (default is **"bottom-left"**)
   list of avaibalble position:
   - bottom
   - bottom-right
@@ -33,4 +35,4 @@ The script has a basic configuration, but here is what you can customize:
 
 Because the images we use are free, here is the websites where we found them:
 - https://www.flaticon.com
-- https://material.io/resources/icons/?style=baseline
+- https://material.io/resources/icons
