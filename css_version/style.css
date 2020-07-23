@@ -1,0 +1,30 @@
+#divRecordButton {
+	position: absolute;
+	width: 70px;
+	height: 70px;
+}
+
+.recordButtons {
+	border-radius: 50%;
+	border: none;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+#recordButton {
+	height: 70px;
+	width: 70px;
+	bottom: 0%;
+	background-color: #d92027;
+	position: absolute;
+	cursor: move;
+}
+
+#downloadRecord {
+	height: 70px;
+	width: 70px;
+	background-color: #fdd03b;
+	position: absolute;
+	cursor: pointer;
+	right: 0px;
+}
