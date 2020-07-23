@@ -1,5 +1,3 @@
-console.log("Auto loading !");
-
 // This is the default configuration
 let config = {
 	position: "bottom-right",
@@ -17,38 +15,56 @@ let pauseButton;
 let downButton;
 
 //Rrweb variables
-let isRrwebLoaded;
+let isRrwebLoaded = false;
 let events = [];
 let isActive;
 let interval;
 
 // WebAudioRecorder variables
-let isWebAudioRecorderLoaded;
+let isWebAudioRecorderLoaded = false;
 let recorder;
 let recStream;
 let audioConfig;
 let input, encodingType;
 
 //Download variables
-let isJsZipLoaded;
+let isJsZipLoaded = false;
 let textData; //code of the webpage download.html
 let eventBlob;
 let soundBlob;
 
 let screenSize;
 
-function includeScript(file) {
-	var script = document.createElement('script'); 
-	script.src = file;
-	script.type = 'text/javascript';
-	script.onload = function () {
-		return true;
+(function( w ){
+	var loadJS = function( src, cb, ordered ){
+		"use strict";
+		var tmp;
+		var ref = w.document.getElementsByTagName( "script" )[ 0 ];
+		var script = w.document.createElement( "script" );
+
+		if (typeof(cb) === 'boolean') {
+			tmp = ordered;
+			ordered = cb;
+			cb = tmp;
+		}
+
+		script.src = src;
+		script.async = !ordered;
+		ref.parentNode.insertBefore( script, ref );
+
+		if (cb && typeof(cb) === "function") {
+			script.onload = cb;
+		}
+		return script;
+	};
+	// commonjs
+	if( typeof module !== "undefined" ){
+		module.exports = loadJS;
 	}
-	script.onerror = function() {
-		return false;
+	else {
+		w.loadJS = loadJS;
 	}
-	document.getElementsByTagName('head').item(0).appendChild(script);
-}
+}( typeof global !== "undefined" ? global : this ));
 
 function configureAudio() {
 	navigator.mediaDevices.getUserMedia({audio: true, video:false}).then(function(stream) {
@@ -75,10 +91,36 @@ function configureAudio() {
 	});
 }
 
+function loadWebAudioRecorder(scriptStatus) {
+		// We include WebAudioRecorder
+		console.log("Je suis aussi dans cette fonction");
+		//includeScript("./recorder/lib/WebAudioRecorder.js", launchRecord);
+		loadJS("./scripts/recorder/lib/WebAudioRecorder.js", function() {
+			// file has loaded
+			isWebAudioRecorderLoaded = true;
+			launchRecord();
+		});
+}
+
+function loadRrweb() {
+	if (!isDragged) {
+		// This function load rrweb from local.
+		// Can also load from URL
+		//includeScript("./rrweb/dist/rrweb.js", loadWebAudioRecorder);
+		console.log("Je suis dans cette fonction");
+		loadJS("./scripts/rrweb/dist/rrweb.js", function() {
+			// file has loaded
+			isRrwebLoaded = true;
+			loadWebAudioRecorder();
+		});
+	}
+}
+
 // This function launch the record of the screen
 function launchRecord() {
 	if (!isDragged) {
 		console.log("This should have launch the recording");
+
 		// Update the style of record button and the onclick function.
 		document.getElementById('recordButton').style.backgroundColor = "white";
 		document.getElementById('recordButton').style.backgroundImage = "url('media/recording32.png')";
@@ -88,62 +130,55 @@ function launchRecord() {
 		//Opening the menu to create
 		openMenu();
 
-		// This function load rrweb from local.
-		// Can also load from URL
-		includeScript("./rrweb/dist/rrweb.js");
-
-		// We include WebAudioRecorder
-		includeScript("./recorder/lib/WebAudioRecorder.js");
-
 		//audioConfig = configureAudio();
 
 		navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(function(stream) {
-		console.log("getUserMedia() success, stream created, initializing WebAudioRecorder...");
+			console.log("getUserMedia() success, stream created, initializing WebAudioRecorder...");
 
-		audioContext = new AudioContext();
+			audioContext = new AudioContext();
 
-		//update the format
-		console.log("Format: 2 channel mp3 @ " + audioContext.sampleRate / 1000 + "kHz");
+			//update the format
+			console.log("Format: 2 channel mp3 @ " + audioContext.sampleRate / 1000 + "kHz");
 
-		//assign to recStream for later use
-		recStream = stream;
+			//assign to recStream for later use
+			recStream = stream;
 
-		/* use the stream */
-		input = audioContext.createMediaStreamSource(stream);
+			/* use the stream */
+			input = audioContext.createMediaStreamSource(stream);
 
-		//get the encoding 
-		encodingType = "mp3";
-	});
+			//get the encoding
+			encodingType = "mp3";
 
-		// We launch sound recording
+	if (isRrwebLoaded && isWebAudioRecorderLoaded) {
+
 		recorder = new WebAudioRecorder(input, {
-			workerDir: "./recorder/lib/",
-			encoding: encodingType,
-			numChannel: 2,
-			onEncoderLoading: function(recorder, encodingType) {
-				console.log("Loading " + encodingType + " encoder...");
-			},
-			onEncoderLoaded: function(recorder, encodingType) {
-				console.log(encodingType + " encoder loaded");
+				workerDir: "./recorder/lib/",
+				encoding: encodingType,
+				numChannel: 2,
+				onEncoderLoading: function(recorder, encodingType) {
+					console.log("Loading " + encodingType + " encoder...");
+				},
+				onEncoderLoaded: function(recorder, encodingType) {
+					console.log(encodingType + " encoder loaded");
+				}
+			});
+
+			recorder.onComplete = function(recorder, blob) {
+				console.log("Encoding complete");
+				soundBlob = blob;
+				console.log(URL.createObjectURL(blob));
+			}
+
+			recorder.startRecording();
+			isActive = rrweb.record({
+				emit(event) {
+					// push event into the events array
+					events.push(event);
+				},
+			});
+			interval = setInterval(function () {console.log(events);}, 1000);
 			}
 		});
-
-		recorder.onComplete = function(recorder, blob) {
-			console.log("Encoding complete");
-			soundBlob = blob;
-			console.log(URL.createObjectURL(blob));
-		}
-
-		recorder.startRecording();
-
-		// We launch Rrweb
-		isActive = rrweb.record({
-			emit(event) {
-				// push event into the events array
-				events.push(event);
-			},
-		});
-		interval = setInterval(function () {console.log(events);}, 1000);
 	}
 }
 
@@ -382,8 +417,8 @@ function makeButtonMovable(button) {
 			mouseX = e.clientX;
 			mouseY = e.clientY;
 			// set the element's new position, only if not going out of the window:
-			if (elmnt.offsetLeft - pos1 >= 0 && (elmnt.offsetLeft + 70) - pos1 < screenSize.width
-				&& elmnt.offsetTop - pos2 >= 0 && (elmnt.offsetTop + 70) - pos2 < screenSize.height)
+			if (elmnt.offsetLeft - pos1 >= 0 && (elmnt.offsetLeft + 70) - pos1 < window.screen.width
+				&& elmnt.offsetTop - pos2 >= 0 && (elmnt.offsetTop + 70) - pos2 < window.screen.height)
 			{
 				elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
 				elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
@@ -404,6 +439,7 @@ function makeButtonMovable(button) {
 
 function createBaseDiv() {
 	var div = document.createElement("div");
+	div.id = "divRecordButton"
 	div.style.width = "70px";
 	div.style.height = "70px";
 	div.style.position = "absolute";
@@ -412,16 +448,11 @@ function createBaseDiv() {
 }
 
 window.onload = function() {
-
 	// We create a div in which wi will display all menu element as block
 	div = createBaseDiv();
 
-	// We get the webpage size, avoiding being able to drop the menu out
-	// of the page
-	screenSize = window.screen;
-
 	// We define a button that will launch recording
-	recordButton = new Button(div, launchRecord, "recordButton", "", "url('media/camera32.png')");
+	recordButton = new Button(div, loadRrweb, "recordButton", "", "url('media/camera32.png')");
 	recordButton.createMenuButton();
 
 	if (config.movable)
