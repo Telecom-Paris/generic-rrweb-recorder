@@ -27,10 +27,9 @@ let input, encodingType;
 let areRecordScriptsLoaded = false;
 
 //Download variables
-let isJsZipLoaded = false;
-let textData; //code of the webpage download.html
 let eventBlob;
 let soundBlob;
+let textData, jsData, cssData;
 
 (function( w ){
 	var loadJS = function( src, cb, ordered ){
@@ -229,15 +228,20 @@ function saveAs(data, filename)
 function readTextFile(file)
 {
 	var rawFile = new XMLHttpRequest();
+	var isFileValid = false;
 	rawFile.open("GET", file, false);
 	rawFile.onreadystatechange = function () {
 		if (rawFile.readyState === 4) {
 			if(rawFile.status === 200 || rawFile.status == 0) {
-				textData = rawFile.responseText;
+				isFileValid = true;
 			}
 		}
 	}
 	rawFile.send(null);
+	if (isFileValid)
+		return rawFile.responseText;
+	else
+		return "error";
 }
 
 
@@ -247,16 +251,22 @@ function downRecord() {
 	loadJS("./jszip/dist/jszip.js", function() {
 		let zip = new JSZip();
 
-		readTextFile("./download.html");
+		textData = readTextFile("./download/download.html");
+		jsData = readTextFile("./download/js/index.js");
+		cssData = readTextFile("./download/js/style.css");
 		// We add thoses files to the zip archive
+		console.log("Je mets les fichiers dans l'archive");
+		console.log("textData vaut " + textData);
 		zip.file("download.html", textData);
+		zip.file("js/index.js", jsData);
+		zip.file("js/style.css", cssData);
 		zip.file("data/events.json", eventBlob);
 		zip.file("data/sound.mp3", soundBlob);
 
 		// Once archive has been generated, we can download it
 		zip.generateAsync({type:"blob"})
 		.then(function(content) {
-			saveAs(content, "example.zip");
+			saveAs(content, "cours.zip");
 		});
 	});
 }
