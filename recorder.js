@@ -84,7 +84,34 @@ function loadRrweb() {
 }
 
 function pauseRecord() {
+	let sliderDiv;
+	let sliderBar;
+
+	if (isActive)
+		isActive();
+	clearInterval(interval);
+
 	console.log("I set in pause");
+	if (events.length > 2) {
+		//loadJS("./scripts/rangeslider.js/dist/rangeslider.js", function() {
+			sliderDiv = createBaseDiv("sliderDiv");
+			
+			sliderDiv.style.position = "fixed";
+			sliderDiv.style.bottom = "0";
+			sliderDiv.style.width = "100%";
+
+			sliderBar = document.createElement("input");
+			sliderBar.type = "range";
+			sliderBar.min = "0";
+			sliderBar.max = "1000";
+			sliderBar.step = "0.1";
+			sliderBar.value = "0";
+
+			sliderBar.style.width = "80%";
+
+			sliderDiv.appendChild(sliderBar);
+		//});
+	}
 }
 
 // This function launch the record of the screen
@@ -92,7 +119,6 @@ function launchRecord() {
 	if (!isDragged) {
 		console.log("Recording has started! ");
 
-		
 		navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(function(stream) {
 			console.log("getUserMedia() success, stream created, initializing WebAudioRecorder...");
 
@@ -426,9 +452,9 @@ function makeButtonMovable(button) {
 	}
 }
 
-function createBaseDiv() {
+function createBaseDiv(divId) {
 	var div = document.createElement("div");
-	div.id = "divRecordButton"
+	div.id = divId;
 	div.style.width = "70px";
 	div.style.height = "70px";
 	div.style.position = "absolute";
@@ -438,7 +464,7 @@ function createBaseDiv() {
 
 window.onload = function() {
 	// We create a div in which wi will display all menu element as block
-	div = createBaseDiv();
+	div = createBaseDiv("divRecordButton");
 
 	// We define a button that will launch recording
 	recordButton = new Button(div, loadRrweb, "recordButton", "Start recording! ", 'media/camera32.png', null);
