@@ -9,9 +9,11 @@ let isMenuOpen = false;
 
 //Displayable menu variable
 let div;
+let divSize = 70;
 let recordButton;
 let pauseButton;
 let downButton;
+let isPauseButtonCreated = false;
 
 //Rrweb variables
 let events = [];
@@ -81,22 +83,16 @@ function loadRrweb() {
 	}
 }
 
+function pauseRecord() {
+	console.log("I set in pause");
+}
+
 // This function launch the record of the screen
 function launchRecord() {
 	if (!isDragged) {
 		console.log("Recording has started! ");
 
-		// Update the style of record button and the onclick function.
-		document.getElementById('recordButton').style.backgroundColor = "white";
-		document.getElementById('recordButton').style.backgroundImage = "url('media/recording32.png')";
-		document.getElementById('recordButton').style.border = "1px solid black";
-		document.getElementById('recordButton').onclick = stopRecord;
-
-		//Opening the menu to create
-		openMenu();
-
-		//audioConfig = configureAudio();
-
+		
 		navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(function(stream) {
 			console.log("getUserMedia() success, stream created, initializing WebAudioRecorder...");
 
@@ -149,6 +145,15 @@ function launchRecord() {
 					},
 				});
 				interval = setInterval(function () {console.log(events);}, 1000);
+
+				// Update the style of record button and the onclick function.
+				document.getElementById('recordButton').style.backgroundColor = "white";
+				document.getElementById('recordButton').style.backgroundImage = "url('media/recording32.png')";
+				document.getElementById('recordButton').style.border = "1px solid black";
+				document.getElementById('recordButton').onclick = stopRecord;
+
+				//Opening the menu to create
+				openMenu();
 			}
 		});
 	}
@@ -169,6 +174,9 @@ function stopRecord() {
 		isActive();
 	clearInterval(interval);
 
+	//We close the menu
+	openMenu();
+
 	// We stop audioRecorder
 	recStream.getAudioTracks()[0].stop();
 	recorder.finishRecording();
@@ -177,24 +185,41 @@ function stopRecord() {
 	eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
 
 	if (events.length > 2) {
-		div.style.width = "150px";
+		increaseDiv();
 		console.log("I can download the page");
-		downButton = new Button(div, downRecord, "downRecord", "Download your record", 'media/down32.png');
+		downButton = new Button(div, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
 		downButton.createChildButton();
 		downButton.show();
 	}
 }
 
+function increaseDiv() {
+	divSize += 80 ;
+	div.style.width = divSize + "px";
+}
+
+function shrinkDiv() {
+	divSize -= 80;
+	div.style.width = divSize + "px";
+}
+
+
+
 function openMenu() {
 	if (isDragged == false) {
-		console.log("Opening the menu");
+		
 		if (!isMenuOpen) {
-			div.style.width = "150px";
-			//pauseButton.show();
+			increaseDiv();
+			if (!isPauseButtonCreated) {
+				console.log("I enter this condition");
+				pauseButton = new Button(div, pauseRecord, "pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
+				isPauseButtonCreated = true;
+				pauseButton.createChildButton();
+			} else { pauseButton.show(); }
 			isMenuOpen = true;
 		} else {
-			//pauseButton.hide();
-			div.style.width = "70px";
+			pauseButton.hide();
+			shrinkDiv();
 			isMenuOpen = false;
 		}
 	}
@@ -256,7 +281,6 @@ function downRecord() {
 		cssData = readTextFile("./download/js/style.css");
 		// We add thoses files to the zip archive
 		console.log("Je mets les fichiers dans l'archive");
-		console.log("textData vaut " + textData);
 		zip.file("download.html", textData);
 		zip.file("js/index.js", jsData);
 		zip.file("js/style.css", cssData);
@@ -284,29 +308,24 @@ function buttonPosition(button) {
 		button.style.left = "0";
 }
 
-function resetStyle() {
-	document.getElementById("recordingButton").style.left = "0";
-	document.getElementById("recordingButton").style.right = "0";
-}
-
 class Button {
 	button;
+	width;
 
-	constructor(context, func, id, text, icon) {
+	constructor(context, func, id, text, icon, rightOf) {
 		this.context = context;
 		this.func = func;
 		this.id = id;
 		this.text = text;
 		this.icon = "url(" + icon + ")";
+		this.width = rightOf != null ? rightOf.getWidth() + 80 : 0;
 	}
 
-	show() {
-		this.button.style.visibility = "visible";
-	}
+	getWidth() { return this.width; }
 
-	hide() {
-		this.button.style.visibility = "hidden";
-	}
+	show() { this.button.style.visibility = "visible"; }
+
+	hide() { this.button.style.visibility = "hidden"; }
 
 	createBasicButton() {
 		this.button = document.createElement("input");
@@ -340,7 +359,7 @@ class Button {
 		this.button.style.position = "absolute";
 		this.button.style.backgroundColor = "#fdd03b";
 		this.button.style.cursor = "pointer";
-		this.button.style.right = "0px";
+		this.button.style.left = this.width + "px";
 		this.context.appendChild(this.button);
 	}
 }
@@ -422,7 +441,7 @@ window.onload = function() {
 	div = createBaseDiv();
 
 	// We define a button that will launch recording
-	recordButton = new Button(div, loadRrweb, "recordButton", "Start recording! ", 'media/camera32.png');
+	recordButton = new Button(div, loadRrweb, "recordButton", "Start recording! ", 'media/camera32.png', null);
 	recordButton.createMenuButton();
 
 	if (config.movable)
