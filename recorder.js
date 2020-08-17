@@ -8,8 +8,9 @@ let isDragged = false;
 let isMenuOpen = false;
 
 //Displayable menu variable
-let div;
-let divSize = 70;
+let mainDiv;
+let mainDivWidth = 70;
+let mainDivHeight = 70;
 let recordButton;
 let pauseButton;
 let downButton;
@@ -77,15 +78,51 @@ function loadRrweb() {
 	// We make sure this is not a drag, but a click
 	if (!isDragged) {
 		// We include Rrweb
-		loadJS("./scripts/rrweb/dist/rrweb.js", function() {
+		loadJS("./scripts/rrweb/dist/rrweb.min.js", function() {
 			loadWebAudioRecorder();
 		});
 	}
 }
 
+let totalTime;
+let sliderBar;
+let textTime;
+let pauseReplayer;
+
+function computeTextTime() {
+	let arrayValue;
+
+	decimalValue = (sliderBar.value + "").split(".")[1];
+	console.log("onInput works, value is " + sliderBar.value);
+	console.log("Extracted decimal is " + decimalValue);
+	if (decimalValue == null) {
+		arrayValue = sliderBar.value;
+	}
+	else if (decimalValue >= 5 && Math.ceil(sliderBar.value) <= events.length) {
+		arrayValue = Math.ceil(sliderBar.value);
+		console.log("Because value is >= 5, taking next frame, arrayValue is " + arrayValue);
+	} else {
+		arrayValue = Math.floor(sliderBar.value);
+		console.log("Because value is < 5, taking previous frame, arrayValue is " + arrayValue);
+	}
+	textTime.innerHTML = computeTimeBetweenTwoFrames(events[arrayValue], events[0]) + " / " + totalTime;
+	pauseReplayer.printFrame(events[arrayValue].timestamp);
+}
+
+function millisToMinutesAndSeconds(millis) {
+  var minutes = Math.floor(millis / 60000);
+  var seconds = ((millis % 60000) / 1000).toFixed(0);
+  return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+}
+
+function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
+	console.log("Recording time is event[last] - event[0] = " + (firstFrame.timestamp - secondFrame.timestamp));
+	console.log("Aka " + millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp) + " mn and secs");
+	return millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp);
+}
+
 function pauseRecord() {
 	let sliderDiv;
-	let sliderBar;
 
 	if (isActive)
 		isActive();
@@ -93,24 +130,26 @@ function pauseRecord() {
 
 	console.log("I set in pause");
 	if (events.length > 2) {
-		//loadJS("./scripts/rangeslider.js/dist/rangeslider.js", function() {
-			sliderDiv = createBaseDiv("sliderDiv");
-			
-			sliderDiv.style.position = "fixed";
-			sliderDiv.style.bottom = "0";
-			sliderDiv.style.width = "100%";
-
-			sliderBar = document.createElement("input");
-			sliderBar.type = "range";
-			sliderBar.min = "0";
-			sliderBar.max = "1000";
-			sliderBar.step = "0.1";
-			sliderBar.value = "0";
-
-			sliderBar.style.width = "80%";
-
-			sliderDiv.appendChild(sliderBar);
-		//});
+		totalTime = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]);
+		//changeMainDivSize(0, 20);
+		sliderDiv = createBaseDiv("sliderDiv");
+		textTime = document.createElement("p");
+		textTime.innerHTML = "00:00 / " + totalTime;
+		sliderDiv.style.position = "fixed";
+		sliderDiv.style.bottom = "0";
+		sliderDiv.style.width = "100%";
+		sliderBar = document.createElement("input");
+		sliderBar.type = "range";
+		sliderBar.min = "0";
+		sliderBar.max = events.length;
+		sliderBar.step = "0.1";
+		sliderBar.value = "0";
+		sliderBar.style.bottom = "0px";
+		sliderBar.style.width = "80%";
+		pauseReplayer = new rrweb.Replayer(events);
+		sliderBar.oninput = computeTextTime;
+		sliderDiv.appendChild(textTime);
+		sliderDiv.appendChild(sliderBar);
 	}
 }
 
@@ -211,41 +250,36 @@ function stopRecord() {
 	eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
 
 	if (events.length > 2) {
-		increaseDiv();
+		changeMainDivSize(80, 0);
 		console.log("I can download the page");
-		downButton = new Button(div, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
+		downButton = new Button(mainDiv, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
 		downButton.createChildButton();
 		downButton.show();
 	}
 }
 
-function increaseDiv() {
-	divSize += 80 ;
-	div.style.width = divSize + "px";
+function changeMainDivSize(newWidthInPx, newHeightInPx) {
+	mainDivWidth += newWidthInPx;
+	mainDivHeight += newHeightInPx;
+	mainDiv.style.width = mainDivWidth + "px";
+	mainDiv.style.height = mainDivHeight + "px";
 }
-
-function shrinkDiv() {
-	divSize -= 80;
-	div.style.width = divSize + "px";
-}
-
-
 
 function openMenu() {
 	if (isDragged == false) {
 		
 		if (!isMenuOpen) {
-			increaseDiv();
+			changeMainDivSize(80, 0);
 			if (!isPauseButtonCreated) {
 				console.log("I enter this condition");
-				pauseButton = new Button(div, pauseRecord, "pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
+				pauseButton = new Button(mainDiv, pauseRecord, "pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
 				isPauseButtonCreated = true;
 				pauseButton.createChildButton();
 			} else { pauseButton.show(); }
 			isMenuOpen = true;
 		} else {
 			pauseButton.hide();
-			shrinkDiv();
+			changeMainDivSize(-80, 0);
 			isMenuOpen = false;
 		}
 	}
@@ -299,7 +333,7 @@ function readTextFile(file)
 // This function launch the download of the record
 function downRecord() {
 	//Load Jszip (minified Because it load faster)
-	loadJS("./jszip/dist/jszip.js", function() {
+	loadJS("./scripts/jszip/dist/jszip.js", function() {
 		let zip = new JSZip();
 
 		textData = readTextFile("./download/download.html");
@@ -371,7 +405,7 @@ class Button {
 		this.createBasicButton();
 		this.button.style.height = "70px";
 		this.button.style.width = "70px";
-		this.button.style.bottom = "0%";
+		this.button.style.top = "0%";
 		this.button.style.backgroundColor = "#d92027";
 		this.button.style.position = "absolute";
 		this.button.style.cursor = "move";
@@ -395,7 +429,7 @@ function finishDragging() {
 }
 
 // The goal of this function is to make a button movable
-function makeButtonMovable(button) {
+function makeElementMovable(button) {
 	//Make the button element draggable:
 	dragElement(button);
 
@@ -452,24 +486,25 @@ function makeButtonMovable(button) {
 	}
 }
 
-function createBaseDiv(divId) {
-	var div = document.createElement("div");
-	div.id = divId;
-	div.style.width = "70px";
-	div.style.height = "70px";
-	div.style.position = "absolute";
-	document.body.appendChild(div);
-	return div;
+function createBaseDiv(mainDivId) {
+	var mainDiv = document.createElement("div");
+	mainDiv.id = mainDivId;
+	mainDiv.style.width = "70px";
+	mainDiv.style.height = "70px";
+	mainDiv.style.position = "absolute";
+	document.body.appendChild(mainDiv);
+	return mainDiv;
 }
 
+// When the page has finished Loading
 window.onload = function() {
-	// We create a div in which wi will display all menu element as block
-	div = createBaseDiv("divRecordButton");
+	// We create a mainDiv in which wi will display all menu element as block
+	mainDiv = createBaseDiv("mainDivRecordButton");
 
 	// We define a button that will launch recording
-	recordButton = new Button(div, loadRrweb, "recordButton", "Start recording! ", 'media/camera32.png', null);
+	recordButton = new Button(mainDiv, loadRrweb, "recordButton", "Start recording! ", 'media/camera32.png', null);
 	recordButton.createMenuButton();
 
 	if (config.movable)
-		makeButtonMovable(div);
+		makeElementMovable(mainDiv);
 }

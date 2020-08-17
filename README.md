@@ -36,3 +36,4 @@ The script has a basic configuration, but here is what you can customize:
 Because the images we use are free, here is the websites where we found them:
 - https://www.flaticon.com
 - https://material.io/resources/icons
+- https://icons8.com/
