@@ -34,12 +34,22 @@ let eventBlob;
 let soundBlob;
 let textData, jsData, cssData;
 
-(function( w ){
-	var loadJS = function( src, cb, ordered ){
+let totalTime;
+let sliderBar;
+let textTime;
+let pauseReplayer;
+
+/**
+ * Load different JS library and callback when fully loaded
+ * @param {string} src The path of the script (can be relative or absolute)
+ * @param {Function} cb Callback, function to launch when loaded
+*/
+(function(w){
+	var loadJS = function(src, cb, ordered){
 		"use strict";
 		var tmp;
-		var ref = w.document.getElementsByTagName( "script" )[ 0 ];
-		var script = w.document.createElement( "script" );
+		var ref = w.document.getElementsByTagName("script")[0];
+		var script = w.document.createElement("script");
 
 		if (typeof(cb) === 'boolean') {
 			tmp = ordered;
@@ -57,13 +67,13 @@ let textData, jsData, cssData;
 		return script;
 	};
 	// commonjs
-	if( typeof module !== "undefined" ){
+	if( typeof module !== "undefined"){
 		module.exports = loadJS;
 	}
 	else {
 		w.loadJS = loadJS;
 	}
-}( typeof global !== "undefined" ? global : this ));
+}(typeof global !== "undefined" ? global : this));
 
 function loadWebAudioRecorder(scriptStatus) {
 		// We include WebAudioRecorder
@@ -84,11 +94,33 @@ function loadRrweb() {
 	}
 }
 
-let totalTime;
-let sliderBar;
-let textTime;
-let pauseReplayer;
+/**
+ * Turn milliseconds to minutes and seconds in the following format:
+ * '00:00'
+ * @param {integer} millis number of millis to convert
+ */
+function millisToMinutesAndSeconds(millis) {
+  var minutes = Math.floor(millis / 60000);
+  var seconds = ((millis % 60000) / 1000).toFixed(0);
+  return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+}
 
+/**
+ * Compute time in minute and second between two rrweb events.
+ * Compute doing firstFrame - secondFrame
+ * @param {rrweb-event} firstFrame The first frame
+ * @param {rrweb-event} secondFrame The second frame
+ * @returns {string} String in the format "00:00"
+ */
+function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
+	console.log("Recording time is event[last] - event[0] = " + (firstFrame.timestamp - secondFrame.timestamp));
+	console.log("Aka " + millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp) + " mn and secs");
+	return millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp);
+}
+
+/**
+ * Compute the current time when the user is moving the range sliderBar
+ */
 function computeTextTime() {
 	let arrayValue;
 
@@ -106,28 +138,20 @@ function computeTextTime() {
 		console.log("Because value is < 5, taking previous frame, arrayValue is " + arrayValue);
 	}
 	textTime.innerHTML = computeTimeBetweenTwoFrames(events[arrayValue], events[0]) + " / " + totalTime;
-	pauseReplayer.printFrame(events[arrayValue].timestamp);
+	pauseReplayer.pause(events[arrayValue].timestamp - events[0].timestamp);
+
 }
 
-function millisToMinutesAndSeconds(millis) {
-  var minutes = Math.floor(millis / 60000);
-  var seconds = ((millis % 60000) / 1000).toFixed(0);
-  return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
-}
-
-function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
-	console.log("Recording time is event[last] - event[0] = " + (firstFrame.timestamp - secondFrame.timestamp));
-	console.log("Aka " + millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp) + " mn and secs");
-	return millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp);
-}
-
+/**
+ * When the record is in pause make appear the range bar
+ */
 function pauseRecord() {
 	let sliderDiv;
 
 	if (isActive)
 		isActive();
 	clearInterval(interval);
-
+	document.getElementById('pauseRecord').style.backgroundImage = "url('media/resume32.png')";
 	console.log("I set in pause");
 	if (events.length > 2) {
 		totalTime = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]);
@@ -142,14 +166,16 @@ function pauseRecord() {
 		sliderBar.max = events.length;
 		sliderBar.step = "0.1";
 		sliderBar.value = "0";
-		pauseReplayer = new rrweb.Replayer(events);
+		pauseReplayer = new rrweb.Replayer(events, {root: document.body});
 		sliderBar.oninput = computeTextTime;
 		sliderDiv.appendChild(textTime);
 		sliderDiv.appendChild(sliderBar);
 	}
 }
 
-// This function launch the record of the screen
+/**
+ * Launch the audio and screen record
+ */
 function launchRecord() {
 	if (!isDragged) {
 		console.log("Recording has started! ");
@@ -220,40 +246,49 @@ function launchRecord() {
 	}
 }
 
-// This function launch the record of the screen
+/**
+ * This function stop the record of the screen and audio.
+ */
 function stopRecord() {
 
 	// Restore the style and onclick of recordButton
-	document.getElementById('recordButton').style.backgroundColor = "#d92027";
-	document.getElementById('recordButton').style.backgroundImage = "url('media/camera32.png')";
-	document.getElementById('recordButton').style.border = "none";
-	document.getElementById('recordButton').onclick = launchRecord;
+	if (!isDragged) {
+		document.getElementById('recordButton').style.backgroundColor = "#d92027";
+		document.getElementById('recordButton').style.backgroundImage = "url('media/camera32.png')";
+		document.getElementById('recordButton').style.border = "none";
+		document.getElementById('recordButton').onclick = launchRecord;
 
-	console.log("The recording has been stopped");
-	// We stop Rrweb
-	if (isActive)
-		isActive();
-	clearInterval(interval);
+		console.log("The recording has been stopped");
+		// We stop Rrweb
+		if (isActive)
+			isActive();
+		clearInterval(interval);
 
-	//We close the menu
-	openMenu();
+		//We close the menu
+		openMenu();
 
-	// We stop audioRecorder
-	recStream.getAudioTracks()[0].stop();
-	recorder.finishRecording();
+		// We stop audioRecorder
+		recStream.getAudioTracks()[0].stop();
+		recorder.finishRecording();
 
-	// Set the event as Blob
-	eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
+		// Set the event as Blob
+		eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
 
-	if (events.length > 2) {
-		changeMainDivSize(80, 0);
-		console.log("I can download the page");
-		downButton = new Button(mainDiv, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
-		downButton.createChildButton();
-		downButton.show();
+		if (events.length > 2) {
+			changeMainDivSize(80, 0);
+			console.log("I can download the page");
+			downButton = new Button(mainDiv, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
+			downButton.createChildButton();
+			downButton.show();
+		}
 	}
 }
 
+/**
+ * Change the size of the mainDiv
+ * @param {integer} newWidthInPx The will that will be added to the current width
+ * @param {integer} newHeightInPx The new height that will be added to the current height
+ */
 function changeMainDivSize(newWidthInPx, newHeightInPx) {
 	mainDivWidth += newWidthInPx;
 	mainDivHeight += newHeightInPx;
@@ -261,13 +296,14 @@ function changeMainDivSize(newWidthInPx, newHeightInPx) {
 	mainDiv.style.height = mainDivHeight + "px";
 }
 
+/**
+ * Increase size of the mainDiv and make visible pause Button
+ */
 function openMenu() {
 	if (isDragged == false) {
-		
 		if (!isMenuOpen) {
 			changeMainDivSize(80, 0);
 			if (!isPauseButtonCreated) {
-				console.log("I enter this condition");
 				pauseButton = new Button(mainDiv, pauseRecord, "pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
 				isPauseButtonCreated = true;
 				pauseButton.createChildButton();
@@ -281,6 +317,11 @@ function openMenu() {
 	}
 }
 
+/**
+ * Download the record automatically
+ * @param {Object} data raw data of the zip file
+ * @param {string} filename The name we want to give to the downloaded filename
+ */
 function saveAs(data, filename)
 {
 	// Create invisible link
@@ -304,8 +345,9 @@ function saveAs(data, filename)
 	document.body.removeChild(a);
 }
 
-// This function read a server-local text file
-// (does not work in local due to CORS request not being HTTPS)
+/** This function read a server-local text file
+ *  (does not work in localhost due to CORS request not being HTTPS)
+ */
 function readTextFile(file)
 {
 	var rawFile = new XMLHttpRequest();
@@ -326,7 +368,9 @@ function readTextFile(file)
 }
 
 
-// This function launch the download of the record
+/**
+ * This function launch the download of the record
+ */
 function downRecord() {
 	//Load Jszip (minified Because it load faster)
 	loadJS("./scripts/jszip/dist/jszip.js", function() {
@@ -364,12 +408,32 @@ function buttonPosition(button) {
 		button.style.left = "0";
 }
 
+/**
+ * Create a new Button
+ * @class
+ *
+ * @param {Object} parentElem The parent Node. The button will be append to this
+ * node
+ *
+ * @param {Function} func On click on the button, this function will be
+ * triggered
+ *
+ * @param {string} id The id of the button
+ *
+ * @param {string} text The name of the button (displayed when the mouse is over
+ * the button)
+ *
+ * @param {string} icon The path of the image displayed in the button
+ *
+ * @param {Button} rightOf The button will be dispplayed to right of this
+ * element
+ */
 class Button {
 	button;
 	width;
 
-	constructor(context, func, id, text, icon, rightOf) {
-		this.context = context;
+	constructor(parentElem, func, id, text, icon, rightOf) {
+		this.parentElem = parentElem;
 		this.func = func;
 		this.id = id;
 		this.text = text;
@@ -377,12 +441,24 @@ class Button {
 		this.width = rightOf != null ? rightOf.getWidth() + 80 : 0;
 	}
 
+	/**
+	 * Return width of the button
+	 */
 	getWidth() { return this.width; }
 
+	/**
+	 * Set the button to visible
+	 */
 	show() { this.button.style.visibility = "visible"; }
 
+	/**
+	 * Hide the button
+	 */
 	hide() { this.button.style.visibility = "hidden"; }
 
+	/**
+	 * Set all element for a basic button
+	 */
 	createBasicButton() {
 		this.button = document.createElement("input");
 		this.button.type = "button";
@@ -393,18 +469,26 @@ class Button {
 		this.button.title = this.text;
 	}
 
+	/**
+	 * Create main Button (recording button).
+	 * Call {@link Button#createBasicButton createBasicButton}.
+	 */
 	createMenuButton() {
 		this.createBasicButton();
 		this.button.classList.add("Buttons");
-		this.context.appendChild(this.button);
+		this.parentElem.appendChild(this.button);
 	}
 
+	/**
+	 * Create others button that are not mainButton.
+	 * Call {@link Button#createBasicButton createBasicButton}.
+	 */
 	createChildButton() {
 		this.createBasicButton();
 		this.button.classList.add("Buttons");
 		this.button.classList.add("ChildButton")
 		this.button.style.left = this.width + "px";
-		this.context.appendChild(this.button);
+		this.parentElem.appendChild(this.button);
 	}
 }
 
@@ -412,10 +496,13 @@ function finishDragging() {
 	isDragged = false;
 }
 
-// The goal of this function is to make a button movable
-function makeElementMovable(button) {
+/**
+ * The goal of this function is to make an element movable with mouse
+ * @param {string} element The element id
+ */
+function makeElementMovable(element) {
 	//Make the button element draggable:
-	dragElement(button);
+	dragElement(element);
 
 	function dragElement(elmnt) {
 		var pos1 = 0, pos2 = 0, mouseX = 0, mouseY = 0;
@@ -427,6 +514,10 @@ function makeElementMovable(button) {
 			elmnt.onmousedown = dragMouseDown;
 		}
 
+		/**
+		 * Change the behaviour when the mouse is down
+		 * @parent {event} The event when triggered
+		 */
 		function dragMouseDown(e) {
 			isDragged = true;
 			e = e || window.event;
@@ -439,6 +530,10 @@ function makeElementMovable(button) {
 			document.onmousemove = elementDrag;
 		}
 
+		/**
+		 * Compute the new element position and put it at the right place
+		 * @parent {event} The event when triggered
+		 */
 		function elementDrag(e) {
 			// If this function is called, then this it not a "click"
 			isClick = false;
@@ -458,6 +553,10 @@ function makeElementMovable(button) {
 			}
 		}
 
+		/**
+		 * End the drag
+		 * @parent {event} The event when triggered
+		 */
 		function closeDragElement() {
 			/* stop moving when mouse button is released:*/
 			document.onmouseup = null;
@@ -470,6 +569,12 @@ function makeElementMovable(button) {
 	}
 }
 
+/**
+ * Create base div containing recorder, pause, resume, stop and downloader
+ * buttons.
+ * @param {string} mainDivId Specify the div id
+ * @return {Object} Return the object of the div, allowing to be modifiable
+ */
 function createBaseDiv(mainDivId) {
 	var mainDiv = document.createElement("div");
 	mainDiv.id = mainDivId;
@@ -477,22 +582,30 @@ function createBaseDiv(mainDivId) {
 	return mainDiv;
 }
 
-function loadCss() {
+/**
+ * Load CSS file from path given
+ * @param {string} path The path for the css file to load
+ */
+function loadCss(path) {
 	var head = document.getElementsByTagName('head')[0];
 	var link = document.createElement('link');
 	link.rel = 'stylesheet';
 	link.type = 'text/css';
-	link.href = 'media/style.css';
+	link.href = path;
 	link.media = 'all';
 	head.appendChild(link);
 }
 
-// When the page has finished Loading
+/**
+ * When the page has finished Loading
+ * @function window.onload
+ */
 window.onload = function() {
 	// We create a mainDiv in which wi will display all menu element as block
 	mainDiv = createBaseDiv("mainDivButton");
 
-	loadCss();
+	// We load CSS
+	loadCss("media/style.css");
 
 	// We define a button that will launch recording
 	recordButton = new Button(mainDiv, loadRrweb, "recordButton", "Start recording! ", 'media/camera32.png', null);

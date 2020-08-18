@@ -28,6 +28,14 @@ The script has a basic configuration, but here is what you can customize:
   - middle-right
 - if the buttons are movable (default is **true**)
 
+### More documentation
+
+To build the documentation, you need [jsdoc](https://jsdoc.app/index.html).
+
+Once installed, you can build the documentation using
+```jsdoc *.js -d doc```
+
+You will find it under the doc folder, in HTML format
 
 ### Licences and credits
 
