@@ -1,7 +1,5 @@
 # Generic-rrweb-recorder
 
-For the css version, please check [here](css_version/README.md).
-
 ### How to install it ?
 
 Just include a line in the header of your website :

@@ -135,17 +135,13 @@ function pauseRecord() {
 		sliderDiv = createBaseDiv("sliderDiv");
 		textTime = document.createElement("p");
 		textTime.innerHTML = "00:00 / " + totalTime;
-		sliderDiv.style.position = "fixed";
-		sliderDiv.style.bottom = "0";
-		sliderDiv.style.width = "100%";
 		sliderBar = document.createElement("input");
+		sliderBar.id = "sliderBar";
 		sliderBar.type = "range";
 		sliderBar.min = "0";
 		sliderBar.max = events.length;
 		sliderBar.step = "0.1";
 		sliderBar.value = "0";
-		sliderBar.style.bottom = "0px";
-		sliderBar.style.width = "80%";
 		pauseReplayer = new rrweb.Replayer(events);
 		sliderBar.oninput = computeTextTime;
 		sliderDiv.appendChild(textTime);
@@ -392,33 +388,21 @@ class Button {
 		this.button.type = "button";
 		this.button.onclick = this.func;
 		this.button.id = this.id;
-		this.button.style.borderRadius = "50%";
-		this.button.style.border = "none";
 		this.button.style.backgroundImage = this.icon;
 		this.button.classList.add("rr-block");
 		this.button.title = this.text;
-		this.button.style.backgroundRepeat = "no-repeat";
-		this.button.style.backgroundPosition = "center";
 	}
 
 	createMenuButton() {
 		this.createBasicButton();
-		this.button.style.height = "70px";
-		this.button.style.width = "70px";
-		this.button.style.top = "0%";
-		this.button.style.backgroundColor = "#d92027";
-		this.button.style.position = "absolute";
-		this.button.style.cursor = "move";
+		this.button.classList.add("Buttons");
 		this.context.appendChild(this.button);
 	}
 
 	createChildButton() {
 		this.createBasicButton();
-		this.button.style.height = "70px";
-		this.button.style.width = "70px";
-		this.button.style.position = "absolute";
-		this.button.style.backgroundColor = "#fdd03b";
-		this.button.style.cursor = "pointer";
+		this.button.classList.add("Buttons");
+		this.button.classList.add("ChildButton")
 		this.button.style.left = this.width + "px";
 		this.context.appendChild(this.button);
 	}
@@ -489,17 +473,26 @@ function makeElementMovable(button) {
 function createBaseDiv(mainDivId) {
 	var mainDiv = document.createElement("div");
 	mainDiv.id = mainDivId;
-	mainDiv.style.width = "70px";
-	mainDiv.style.height = "70px";
-	mainDiv.style.position = "absolute";
 	document.body.appendChild(mainDiv);
 	return mainDiv;
+}
+
+function loadCss() {
+	var head = document.getElementsByTagName('head')[0];
+	var link = document.createElement('link');
+	link.rel = 'stylesheet';
+	link.type = 'text/css';
+	link.href = 'media/style.css';
+	link.media = 'all';
+	head.appendChild(link);
 }
 
 // When the page has finished Loading
 window.onload = function() {
 	// We create a mainDiv in which wi will display all menu element as block
-	mainDiv = createBaseDiv("mainDivRecordButton");
+	mainDiv = createBaseDiv("mainDivButton");
+
+	loadCss();
 
 	// We define a button that will launch recording
 	recordButton = new Button(mainDiv, loadRrweb, "recordButton", "Start recording! ", 'media/camera32.png', null);

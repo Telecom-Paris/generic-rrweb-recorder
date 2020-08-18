@@ -1,22 +1,26 @@
-#divRecordButton {
+#mainDivButton {
 	position: absolute;
 	width: 70px;
 	height: 70px;
 }
 
-.recordButtons {
+.Buttons {
 	border-radius: 50%;
 	border: none;
 	background-repeat: no-repeat;
 	background-position: center;
+	height: 70px;
+	width: 70px;
+	top: 0%;
+	position: absolute;
+}
+
+.childButton {
+	background-color: #fdd03b;
 }
 
 #recordButton {
-	height: 70px;
-	width: 70px;
-	bottom: 0%;
 	background-color: #d92027;
-	position: absolute;
 	cursor: move;
 }
 
@@ -26,5 +30,17 @@
 	background-color: #fdd03b;
 	position: absolute;
 	cursor: pointer;
-	right: 0px;
+}
+
+#sliderDiv {
+	position: fixed;
+	bottom: 0px;
+	width: 100%;
+}
+
+#sliderDiv input {
+	bottom: 0px;
+	width: 80%;
+}
+
 }
