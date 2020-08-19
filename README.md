@@ -33,7 +33,7 @@ The script has a basic configuration, but here is what you can customize:
 To build the documentation, you need [jsdoc](https://jsdoc.app/index.html).
 
 Once installed, you can build the documentation using
-```jsdoc *.js -d doc```
+```jsdoc *.js README.m -d doc```
 
 You will find it under the doc folder, in HTML format
 

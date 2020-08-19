@@ -1,45 +1,150 @@
-// This is the default configuration
+/**
+ * This is the default configuration variable
+ * @type {Object}
+*/
 let config = {
 	position: "bottom-right",
 	movable: true
 };
 
+/**
+ * This variable is used to see if the button is dragged or clicked.
+ * Default value: false;
+ * @type {boolean}
+*/
 let isDragged = false;
+/**
+ * This variable is used to see if the menu is open or closed.
+ * Default value: false;
+ * @type {boolean}
+*/
 let isMenuOpen = false;
 
-//Displayable menu variable
+/**
+ * Main div Object
+ * @type {Object}
+ */
 let mainDiv;
 let mainDivWidth = 70;
 let mainDivHeight = 70;
+
+/**
+ * Record Button Object
+ * @type {Button}
+ */
 let recordButton;
+/**
+ * Pause Button Object
+ * @type {Button}
+ */
 let pauseButton;
+/**
+ * Download Button Object
+ * @type {Button}
+ */
 let downButton;
+/**
+ * Check if pause Button has been created
+ * Default value: false
+ * @type {boolean}
+ */
 let isPauseButtonCreated = false;
 
-//Rrweb variables
+/**
+ * Rrweb events array.
+ * Default value: [] (empty)
+ * @type {array}
+ */
 let events = [];
+/**
+ * Rrweb recorder.
+ * Allow us to stop it when needed
+ * @type {Object}
+ */
 let isActive;
+/**
+ * interval to print logs
+ * Default value: every 10 seconds
+ * @type {function}
+*/
 let interval;
 
-// WebAudioRecorder variables
+/**
+ * Recorder Object
+ * @type {Object}
+ */
 let recorder;
+/**
+ * Audio Stream.
+ * Allow us to stop it when needed
+ */
 let recStream;
-let audioConfig;
-let input, encodingType;
+/**
+ * encoding type is format encoding for sound.
+ * Default value: "mp3";
+ * @type {string}
+ */
+let encodingType = "mp3";
 
+/**
+ * Variable to check if all script used to record are loaded.
+ * Default value: false
+ * @type {boolean}
+ */
 let areRecordScriptsLoaded = false;
 
-//Download variables
+/**
+ * A blob of all events, for downloading
+ * @type {Blob}
+ */
 let eventBlob;
+/**
+ * A blob of mp3 recording, for downloading
+ * @type {Blob}
+ */
 let soundBlob;
-let textData, jsData, cssData;
+/**
+ * The replay page text when downloading
+ * @type {string}
+ */
+let textData;
+/**
+ * The js script in the replay page (for download)
+ * @type {string}
+ */
+let jsData;
+/**
+ * The css data used in the replay page (for download)
+ * @type {string}
+ */
+let cssData;
 
+/**
+ * Time of the record.
+ * Used when the range bar is displayed
+ * @type {string}
+ */
 let totalTime;
+/**
+ * Sliderbar range bar Object
+ * @type {Object}
+ */
 let sliderBar;
+/**
+ * Range bar text indicator
+ * @type {Object}
+ */
 let textTime;
+/**
+ * Replayer created during pause, to be able to recreate frames in real time
+ * @type {Object}
+ */
 let pauseReplayer;
+/**
+ * Frame selected each time the user use the range bar
+ * @type {interger}
+ */
 let arrayValue;
-
 
 /**
  * Load different JS library and callback when fully loaded
@@ -214,7 +319,7 @@ function launchRecord() {
 		navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(function(stream) {
 			console.log("getUserMedia() success, stream created, initializing WebAudioRecorder...");
 
-			audioContext = new AudioContext();
+			let audioContext = new AudioContext();
 
 			//update the format
 			console.log("Format: 2 channel mp3 @ " + audioContext.sampleRate / 1000 + "kHz");
@@ -223,10 +328,7 @@ function launchRecord() {
 			recStream = stream;
 
 			/* use the stream */
-			input = audioContext.createMediaStreamSource(stream);
-
-			//get the encoding
-			encodingType = "mp3";
+			let input = audioContext.createMediaStreamSource(stream);
 
 			if (areRecordScriptsLoaded) {
 				recorder = new WebAudioRecorder(input, {
