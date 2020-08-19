@@ -39,6 +39,14 @@ You will find it under the doc folder, in HTML format
 
 ### Licences and credits
 
+This project use the following libraries:
+
+[rrweb](https://github.com/rrweb-io/rrweb)
+
+[jszip](https://github.com/Stuk/jszip)
+
+[WebAudioRecorder](https://github.com/higuma/web-audio-recorder-js)
+
 Because the images we use are free, here is the websites where we found them:
 - https://www.flaticon.com
 - https://material.io/resources/icons
