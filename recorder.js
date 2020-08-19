@@ -137,9 +137,10 @@ let sliderBar;
 let textTime;
 /**
  * Replayer created during pause, to be able to recreate frames in real time
+ * Default value: null
  * @type {Object}
  */
-let pauseReplayer;
+let pauseReplayer = null;
 /**
  * Frame selected each time the user use the range bar
  * @type {interger}
@@ -173,13 +174,6 @@ let arrayValue;
 		}
 		return script;
 	};
-	// commonjs
-	if( typeof module !== "undefined"){
-		module.exports = loadJS;
-	}
-	else {
-		w.loadJS = loadJS;
-	}
 }(typeof global !== "undefined" ? global : this));
 
 //TODO: refactor those loading functions
@@ -259,8 +253,10 @@ function resumeRecord()
 		document.getElementById('pauseRecord').style.backgroundImage = "url('media/pause32.png')";
 		document.getElementById('pauseRecord').onclick = pauseRecord;
 
-		console.log("I split from 0 to " + arrayValue);
-		events = events.slice(0, arrayValue);
+		if (isUserComingBack) {
+			console.log("I split from 0 to " + arrayValue);
+			events = events.slice(0, arrayValue);
+		}
 
 		document.getElementById('sliderDiv').style.visibility = "hidden";
 
@@ -291,21 +287,25 @@ function pauseRecord() {
 	if (events.length > 2) {
 		totalTime = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]);
 		//changeMainDivSize(0, 20);
+		if (!pauseReplayer) {
 		sliderDiv = createBaseDiv("sliderDiv");
 		textTime = document.createElement("p");
-		textTime.innerHTML = "00:00 / " + totalTime;
 		sliderBar = document.createElement("input");
 		sliderBar.id = "sliderBar";
 		sliderBar.type = "range";
 		sliderBar.min = "0";
-		sliderBar.max = events.length;
 		sliderBar.step = "0.1";
-		sliderBar.value = events.length;
 		pauseReplayer = new rrweb.Replayer(events, {root: document.body});
-		pauseReplayer.pause(events[events.length - 1].timestamp, events[0].timestamp);
 		sliderBar.oninput = computeTextTime;
 		sliderDiv.appendChild(textTime);
 		sliderDiv.appendChild(sliderBar);
+		} else {
+			document.getElementById('sliderDiv').style.visibility = "visible";
+		}
+		textTime.innerHTML = "00:00 / " + totalTime;
+		sliderBar.max = events.length;
+		sliderBar.value = events.length;
+		pauseReplayer.pause(events[events.length - 1].timestamp, events[0].timestamp);
 	}
 }
 
