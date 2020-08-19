@@ -38,6 +38,8 @@ let totalTime;
 let sliderBar;
 let textTime;
 let pauseReplayer;
+let arrayValue;
+
 
 /**
  * Load different JS library and callback when fully loaded
@@ -75,6 +77,7 @@ let pauseReplayer;
 	}
 }(typeof global !== "undefined" ? global : this));
 
+//TODO: refactor those loading functions
 function loadWebAudioRecorder(scriptStatus) {
 		// We include WebAudioRecorder
 		loadJS("./scripts/recorder/lib/WebAudioRecorder.js", function() {
@@ -122,8 +125,6 @@ function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
  * Compute the current time when the user is moving the range sliderBar
  */
 function computeTextTime() {
-	let arrayValue;
-
 	decimalValue = (sliderBar.value + "").split(".")[1];
 	console.log("onInput works, value is " + sliderBar.value);
 	console.log("Extracted decimal is " + decimalValue);
@@ -139,7 +140,33 @@ function computeTextTime() {
 	}
 	textTime.innerHTML = computeTimeBetweenTwoFrames(events[arrayValue], events[0]) + " / " + totalTime;
 	pauseReplayer.pause(events[arrayValue].timestamp - events[0].timestamp);
+}
 
+/**
+ * Resume the record
+ * This function is very similar to {@link launchRecord}, excepted we do not
+ * need to check for permissions, they should be granted
+ */
+function resumeRecord()
+{
+	if (!isDragged) {
+
+		document.getElementById('pauseRecord').style.backgroundImage = "url('media/pause32.png')";
+		document.getElementById('pauseRecord').onclick = pauseRecord;
+
+		console.log("I split from 0 to " + arrayValue);
+		events = events.slice(0, arrayValue);
+
+		document.getElementById('sliderDiv').style.visibility = "hidden";
+
+		isActive = rrweb.record({
+				emit(event) {
+				// push event into the events array
+				events.push(event);
+			},
+		});
+		interval = setInterval(function () {console.log(events);}, 1000);
+	}
 }
 
 /**
@@ -151,7 +178,10 @@ function pauseRecord() {
 	if (isActive)
 		isActive();
 	clearInterval(interval);
+
 	document.getElementById('pauseRecord').style.backgroundImage = "url('media/resume32.png')";
+	document.getElementById('pauseRecord').onclick = resumeRecord;
+
 	console.log("I set in pause");
 	if (events.length > 2) {
 		totalTime = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]);
@@ -165,8 +195,9 @@ function pauseRecord() {
 		sliderBar.min = "0";
 		sliderBar.max = events.length;
 		sliderBar.step = "0.1";
-		sliderBar.value = "0";
+		sliderBar.value = events.length;
 		pauseReplayer = new rrweb.Replayer(events, {root: document.body});
+		pauseReplayer.pause(events[events.length - 1].timestamp, events[0].timestamp);
 		sliderBar.oninput = computeTextTime;
 		sliderDiv.appendChild(textTime);
 		sliderDiv.appendChild(sliderBar);
