@@ -4,7 +4,8 @@
 */
 let config = {
 	position: "bottom-right",
-	movable: true
+	movable: true,
+	debug: false
 };
 
 /**
@@ -216,9 +217,15 @@ function millisToMinutesAndSeconds(millis) {
  * @returns {string} String in the format "00:00"
  */
 function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
-	console.log("Recording time is event[last] - event[0] = " + (firstFrame.timestamp - secondFrame.timestamp));
-	console.log("Aka " + millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp) + " mn and secs");
+	logger("Recording time is event[last] - event[0] = " + (firstFrame.timestamp - secondFrame.timestamp));
+	logger("Aka " + millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp) + " mn and secs");
 	return millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp);
+}
+
+function logger(stringLog){
+	if (this.config.debug) {
+		console.log(stringLog);
+	}
 }
 
 /**
@@ -226,17 +233,17 @@ function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
  */
 function computeTextTime() {
 	decimalValue = (sliderBar.value + "").split(".")[1];
-	console.log("onInput works, value is " + sliderBar.value);
-	console.log("Extracted decimal is " + decimalValue);
+	logger("onInput works, value is " + sliderBar.value);
+	logger("Extracted decimal is " + decimalValue);
 	if (decimalValue == null) {
 		arrayValue = sliderBar.value;
 	}
 	else if (decimalValue >= 5 && Math.ceil(sliderBar.value) <= events.length) {
 		arrayValue = Math.ceil(sliderBar.value);
-		console.log("Because value is >= 5, taking next frame, arrayValue is " + arrayValue);
+		logger("Because value is >= 5, taking next frame, arrayValue is " + arrayValue);
 	} else {
 		arrayValue = Math.floor(sliderBar.value);
-		console.log("Because value is < 5, taking previous frame, arrayValue is " + arrayValue);
+		logger("Because value is < 5, taking previous frame, arrayValue is " + arrayValue);
 	}
 	textTime.innerHTML = computeTimeBetweenTwoFrames(events[arrayValue], events[0]) + " / " + totalTime;
 	pauseReplayer.pause(events[arrayValue].timestamp - events[0].timestamp);
@@ -267,7 +274,7 @@ function resumeRecord()
 				events.push(event);
 			},
 		});
-		interval = setInterval(function () {console.log(events);}, 1000);
+		interval = setInterval(function () {logger(events);}, 1000);
 	}
 }
 
@@ -318,12 +325,12 @@ function launchRecord() {
 		console.log("Recording has started! ");
 
 		navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(function(stream) {
-			console.log("getUserMedia() success, stream created, initializing WebAudioRecorder...");
+			logger("getUserMedia() success, stream created, initializing WebAudioRecorder...");
 
 			let audioContext = new AudioContext();
 
 			//update the format
-			console.log("Format: 2 channel mp3 @ " + audioContext.sampleRate / 1000 + "kHz");
+			logger("Format: 2 channel mp3 @ " + audioContext.sampleRate / 1000 + "kHz");
 
 			//assign to recStream for later use
 			recStream = stream;
@@ -337,17 +344,17 @@ function launchRecord() {
 					encoding: encodingType,
 					numChannel: 2,
 					onEncoderLoading: function(recorder, encodingType) {
-						console.log("Loading " + encodingType + " encoder...");
+						logger("Loading " + encodingType + " encoder...");
 					},
 					onEncoderLoaded: function(recorder, encodingType) {
-						console.log(encodingType + " encoder loaded");
+						logger(encodingType + " encoder loaded");
 					}
 				});
 
 				recorder.onComplete = function(recorder, blob) {
-					console.log("Encoding complete");
+					logger("Encoding complete");
 					soundBlob = blob;
-					console.log(URL.createObjectURL(blob));
+					logger(URL.createObjectURL(blob));
 				}
 
 				recorder.setOptions({
@@ -365,7 +372,7 @@ function launchRecord() {
 						events.push(event);
 					},
 				});
-				interval = setInterval(function () {console.log(events);}, 1000);
+				interval = setInterval(function () {logger(events);}, 1000);
 
 				// Update the style of record button and the onclick function.
 				document.getElementById('recordButton').style.backgroundColor = "white";
@@ -409,7 +416,7 @@ function stopRecord() {
 		eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
 		if (events.length > 2) {
 			changeMainDivSize(80, 0);
-			console.log("I can download the page");
+			logger("I can download the page");
 			downButton = new Button(mainDiv, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
 			downButton.createChildButton();
 			downButton.show();
@@ -513,7 +520,7 @@ function downRecord() {
 		jsData = readTextFile("./download/js/index.js");
 		cssData = readTextFile("./download/js/style.css");
 		// We add thoses files to the zip archive
-		console.log("Je mets les fichiers dans l'archive");
+		logger("Je mets les fichiers dans l'archive");
 		zip.file("download.html", textData);
 		zip.file("js/index.js", jsData);
 		zip.file("js/style.css", cssData);
