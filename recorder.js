@@ -174,24 +174,25 @@ let arrayValue;
 		}
 		return script;
 	};
+	// commonjs
+	if( typeof module !== "undefined"){
+		module.exports = loadJS;
+	}
+	else {
+		w.loadJS = loadJS;
+	}
 }(typeof global !== "undefined" ? global : this));
 
-//TODO: refactor those loading functions
-function loadWebAudioRecorder(scriptStatus) {
-		// We include WebAudioRecorder
-		loadJS("./scripts/recorder/lib/WebAudioRecorder.js", function() {
-			// Once script has been loaded, launch the rest of the code
-			areRecordScriptsLoaded = true;
-			launchRecord();
-		});
-}
-
-function loadRrweb() {
+function loadScripts() {
 	// We make sure this is not a drag, but a click
 	if (!isDragged) {
 		// We include Rrweb
 		loadJS("./scripts/rrweb/dist/rrweb.min.js", function() {
-			loadWebAudioRecorder();
+			loadJS("./scripts/recorder/lib/WebAudioRecorder.js", function() {
+			// Once script has been loaded, launch the rest of the code
+				areRecordScriptsLoaded = true;
+				launchRecord();
+			});
 		});
 	}
 }
@@ -253,10 +254,10 @@ function resumeRecord()
 		document.getElementById('pauseRecord').style.backgroundImage = "url('media/pause32.png')";
 		document.getElementById('pauseRecord').onclick = pauseRecord;
 
-		if (isUserComingBack) {
-			console.log("I split from 0 to " + arrayValue);
-			events = events.slice(0, arrayValue);
-		}
+		//if (isUserComingBack) {
+		//	console.log("I split from 0 to " + arrayValue);
+		//	events = events.slice(0, arrayValue);
+		//}
 
 		document.getElementById('sliderDiv').style.visibility = "hidden";
 
@@ -406,7 +407,6 @@ function stopRecord() {
 
 		// Set the event as Blob
 		eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
-
 		if (events.length > 2) {
 			changeMainDivSize(80, 0);
 			console.log("I can download the page");
@@ -741,7 +741,7 @@ window.onload = function() {
 	loadCss("media/style.css");
 
 	// We define a button that will launch recording
-	recordButton = new Button(mainDiv, loadRrweb, "recordButton", "Start recording! ", 'media/camera32.png', null);
+	recordButton = new Button(mainDiv, loadScripts, "recordButton", "Start recording! ", 'media/camera32.png', null);
 	recordButton.createMenuButton();
 
 	if (config.movable)
