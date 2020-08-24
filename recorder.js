@@ -5,7 +5,9 @@
 let config = {
 	position: "bottom-right",
 	movable: true,
-	debug: false
+	debug: false,
+	recordButtonColor: null,
+	pauseButtonColor: null
 };
 
 /**
@@ -223,7 +225,7 @@ function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
 }
 
 function logger(stringLog){
-	if (this.config.debug) {
+	if (config.debug) {
 		console.log(stringLog);
 	}
 }
@@ -354,6 +356,7 @@ function launchRecord() {
 				recorder.onComplete = function(recorder, blob) {
 					logger("Encoding complete");
 					soundBlob = blob;
+					console.log(soundBlob);
 					logger(URL.createObjectURL(blob));
 				}
 
@@ -414,6 +417,7 @@ function stopRecord() {
 
 		// Set the event as Blob
 		eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
+
 		if (events.length > 2) {
 			changeMainDivSize(80, 0);
 			logger("I can download the page");
@@ -520,6 +524,10 @@ function downRecord() {
 		jsData = readTextFile("./download/js/index.js");
 		cssData = readTextFile("./download/js/style.css");
 		// We add thoses files to the zip archive
+
+		//let addEventsToFile = "events JSON.parse(" + JSON.stringify(events) + "</script>"
+
+		//textData += addEventsToFile + "</body></html>";
 		logger("Je mets les fichiers dans l'archive");
 		zip.file("download.html", textData);
 		zip.file("js/index.js", jsData);
@@ -537,15 +545,15 @@ function downRecord() {
 
 function buttonPosition(button) {
 	if (config.position.search("bottom") > -1)
-		button.style.bottom = "0";
+		button.style.bottom = "50";
 	if (config.position.search("top") > -1)
-		button.style.top = "0";
+		button.style.top = "50";
 	if (config.position.search("middle") > -1)
 		button.style.top = "50%";
 	if (config.position.search("-right") > -1)
-		button.style.right = "0";
+		button.style.right = "50";
 	if (config.position.search("-left") > -1)
-		button.style.left = "0";
+		button.style.left = "50";
 }
 
 /**
@@ -616,6 +624,8 @@ class Button {
 	createMenuButton() {
 		this.createBasicButton();
 		this.button.classList.add("Buttons");
+		if (config.recordButtonColor)
+			this.button.style.backgroundColor = config.recordButtonColor;
 		this.parentElem.appendChild(this.button);
 	}
 
@@ -625,6 +635,8 @@ class Button {
 	 */
 	createChildButton() {
 		this.createBasicButton();
+		if (config.recordPauseColor)
+			this.button.style.backgroundColor = config.pauseButtonColor;
 		this.button.classList.add("Buttons");
 		this.button.classList.add("ChildButton")
 		this.button.style.left = this.width + "px";
@@ -750,6 +762,8 @@ window.onload = function() {
 	// We define a button that will launch recording
 	recordButton = new Button(mainDiv, loadScripts, "recordButton", "Start recording! ", 'media/camera32.png', null);
 	recordButton.createMenuButton();
+
+	buttonPosition(mainDiv);
 
 	if (config.movable)
 		makeElementMovable(mainDiv);

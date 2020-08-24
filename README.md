@@ -7,7 +7,7 @@ Just include a line in the header of your website :
 (or at the bottom of your body if you want your website to load faster)
 
 ```
-<script type="text/javascript" src="path/of/js/file/recorder.js"></script>
+<script type="text/javascript" src="path/to/recorder.js"></script>
 ```
 
 The script takes care of the rest.
@@ -15,7 +15,7 @@ The script takes care of the rest.
 ### Customize it as you want:
 
 The script has a basic configuration, but here is what you can customize:
-- position (default is **"bottom-left"**)
+- position (default is **"bottom-right"**)
   list of avaibalble position:
   - bottom
   - bottom-right
@@ -24,9 +24,12 @@ The script has a basic configuration, but here is what you can customize:
   - top-right
   - top-left
   - middle
-  - middle-left
   - middle-right
+  - middle-left
 - if the buttons are movable (default is **true**)
+- if the log is printed or not (default is **true**)
+- Color of the record Button (The main Button) (default is **red**);
+- Color of the pause / download Button (default is **yellow**);
 
 ### More documentation
 
