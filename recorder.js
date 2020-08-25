@@ -5,7 +5,7 @@
 let config = {
 	position: "bottom-right",
 	movable: true,
-	debug: false,
+	debug: true,
 	recordButtonColor: null,
 	pauseButtonColor: null
 };
@@ -59,6 +59,16 @@ let isPauseButtonCreated = false;
  * @type {array}
  */
 let events = [];
+/**
+ * Contains audio parts of recording.
+ * Each time a user set pause to the recording, a blob is written into this
+ * array.
+ * When the user stop the record, all audio are concatenated into one.
+ * At the end of the recording, the array contains at least one element.
+ * Default value: [] (empty)
+ * @type {array}
+ */
+let audioParts = [];
 /**
  * Rrweb recorder.
  * Allow us to stop it when needed
@@ -190,8 +200,8 @@ function loadScripts() {
 	// We make sure this is not a drag, but a click
 	if (!isDragged) {
 		// We include Rrweb
-		loadJS("./scripts/rrweb/dist/rrweb.min.js", function() {
-			loadJS("./scripts/recorder/lib/WebAudioRecorder.js", function() {
+		loadJS("./lib/rrweb/dist/rrweb.min.js", function() {
+			loadJS("./lib/web-audio-recorder/lib/WebAudioRecorder.js", function() {
 			// Once script has been loaded, launch the rest of the code
 				areRecordScriptsLoaded = true;
 				launchRecord();
@@ -270,6 +280,8 @@ function resumeRecord()
 
 		document.getElementById('sliderDiv').style.visibility = "hidden";
 
+		recorder.startRecording();
+
 		isActive = rrweb.record({
 				emit(event) {
 				// push event into the events array
@@ -306,13 +318,18 @@ function pauseRecord() {
 		sliderBar.min = "0";
 		sliderBar.step = "0.1";
 		pauseReplayer = new rrweb.Replayer(events, {root: document.body});
+		pauseReplayer.enableInteract();
 		sliderBar.oninput = computeTextTime;
 		sliderDiv.appendChild(textTime);
 		sliderDiv.appendChild(sliderBar);
 		} else {
 			document.getElementById('sliderDiv').style.visibility = "visible";
 		}
-		textTime.innerHTML = "00:00 / " + totalTime;
+
+		// We stop audioRecorder
+		recorder.finishRecording();
+
+		textTime.innerHTML = totalTime + " / " + totalTime;
 		sliderBar.max = events.length;
 		sliderBar.value = events.length;
 		pauseReplayer.pause(events[events.length - 1].timestamp, events[0].timestamp);
@@ -342,7 +359,7 @@ function launchRecord() {
 
 			if (areRecordScriptsLoaded) {
 				recorder = new WebAudioRecorder(input, {
-					workerDir: "./scripts/recorder/lib/",
+					workerDir: "./lib/web-audio-recorder/lib/",
 					encoding: encodingType,
 					numChannel: 2,
 					onEncoderLoading: function(recorder, encodingType) {
@@ -355,9 +372,9 @@ function launchRecord() {
 
 				recorder.onComplete = function(recorder, blob) {
 					logger("Encoding complete");
-					soundBlob = blob;
-					console.log(soundBlob);
+					logger(soundBlob);
 					logger(URL.createObjectURL(blob));
+					audioParts.push(blob);
 				}
 
 				recorder.setOptions({
@@ -412,19 +429,26 @@ function stopRecord() {
 		openMenu();
 
 		// We stop audioRecorder
-		recStream.getAudioTracks()[0].stop();
 		recorder.finishRecording();
+		recStream.getAudioTracks()[0].stop();
 
 		// Set the event as Blob
 		eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
 
-		if (events.length > 2) {
-			changeMainDivSize(80, 0);
-			logger("I can download the page");
-			downButton = new Button(mainDiv, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
-			downButton.createChildButton();
-			downButton.show();
-		}
+		// We concatenate all audio parts.
+		loadJS("./lib/concatenate-blob/ConcatenateBlobs.js", function () {
+			ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
+				soundBlob = resultingBlob;
+			});
+
+			if (events.length > 2) {
+				changeMainDivSize(80, 0);
+				logger("I can download the page");
+				downButton = new Button(mainDiv, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
+				downButton.createChildButton();
+				downButton.show();
+			}
+		});
 	}
 }
 
@@ -517,7 +541,7 @@ function readTextFile(file)
  */
 function downRecord() {
 	//Load Jszip (minified Because it load faster)
-	loadJS("./scripts/jszip/dist/jszip.js", function() {
+	loadJS("./lib/jszip/dist/jszip.js", function() {
 		let zip = new JSZip();
 
 		textData = readTextFile("./download/download.html");
@@ -613,7 +637,7 @@ class Button {
 		this.button.onclick = this.func;
 		this.button.id = this.id;
 		this.button.style.backgroundImage = this.icon;
-		this.button.classList.add("rr-block");
+		
 		this.button.title = this.text;
 	}
 
@@ -729,6 +753,7 @@ function makeElementMovable(element) {
  */
 function createBaseDiv(mainDivId) {
 	var mainDiv = document.createElement("div");
+	mainDiv.classList.add("rr-block");
 	mainDiv.id = mainDivId;
 	document.body.appendChild(mainDiv);
 	return mainDiv;

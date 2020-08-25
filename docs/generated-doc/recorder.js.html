@@ -88,6 +88,16 @@ let isPauseButtonCreated = false;
  */
 let events = [];
 /**
+ * Contains audio parts of recording.
+ * Each time a user set pause to the recording, a blob is written into this
+ * array.
+ * When the user stop the record, all audio are concatenated into one.
+ * At the end of the recording, the array contains at least one element.
+ * Default value: [] (empty)
+ * @type {array}
+ */
+let audioParts = [];
+/**
  * Rrweb recorder.
  * Allow us to stop it when needed
  * @type {Object}
@@ -218,8 +228,8 @@ function loadScripts() {
 	// We make sure this is not a drag, but a click
 	if (!isDragged) {
 		// We include Rrweb
-		loadJS("./scripts/rrweb/dist/rrweb.min.js", function() {
-			loadJS("./scripts/recorder/lib/WebAudioRecorder.js", function() {
+		loadJS("./lib/rrweb/dist/rrweb.min.js", function() {
+			loadJS("./lib/web-audio-recorder/lib/WebAudioRecorder.js", function() {
 			// Once script has been loaded, launch the rest of the code
 				areRecordScriptsLoaded = true;
 				launchRecord();
@@ -298,6 +308,8 @@ function resumeRecord()
 
 		document.getElementById('sliderDiv').style.visibility = "hidden";
 
+		recorder.startRecording();
+
 		isActive = rrweb.record({
 				emit(event) {
 				// push event into the events array
@@ -334,6 +346,7 @@ function pauseRecord() {
 		sliderBar.min = "0";
 		sliderBar.step = "0.1";
 		pauseReplayer = new rrweb.Replayer(events, {root: document.body});
+		pauseReplayer.enableInteract();
 		sliderBar.oninput = computeTextTime;
 		sliderDiv.appendChild(textTime);
 		sliderDiv.appendChild(sliderBar);
@@ -344,7 +357,7 @@ function pauseRecord() {
 		// We stop audioRecorder
 		recorder.finishRecording();
 
-		textTime.innerHTML = "00:00 / " + totalTime;
+		textTime.innerHTML = totalTime + " / " + totalTime;
 		sliderBar.max = events.length;
 		sliderBar.value = events.length;
 		pauseReplayer.pause(events[events.length - 1].timestamp, events[0].timestamp);
@@ -374,7 +387,7 @@ function launchRecord() {
 
 			if (areRecordScriptsLoaded) {
 				recorder = new WebAudioRecorder(input, {
-					workerDir: "./scripts/recorder/lib/",
+					workerDir: "./lib/web-audio-recorder/lib/",
 					encoding: encodingType,
 					numChannel: 2,
 					onEncoderLoading: function(recorder, encodingType) {
@@ -387,9 +400,9 @@ function launchRecord() {
 
 				recorder.onComplete = function(recorder, blob) {
 					logger("Encoding complete");
-					soundBlob = blob;
-					console.log(soundBlob);
+					logger(soundBlob);
 					logger(URL.createObjectURL(blob));
+					audioParts.push(blob);
 				}
 
 				recorder.setOptions({
@@ -450,13 +463,20 @@ function stopRecord() {
 		// Set the event as Blob
 		eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
 
-		if (events.length > 2) {
-			changeMainDivSize(80, 0);
-			logger("I can download the page");
-			downButton = new Button(mainDiv, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
-			downButton.createChildButton();
-			downButton.show();
-		}
+		// We concatenate all audio parts.
+		loadJS("./lib/concatenate-blob/ConcatenateBlobs.js", function () {
+			ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
+				soundBlob = resultingBlob;
+			});
+
+			if (events.length > 2) {
+				changeMainDivSize(80, 0);
+				logger("I can download the page");
+				downButton = new Button(mainDiv, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
+				downButton.createChildButton();
+				downButton.show();
+			}
+		});
 	}
 }
 
@@ -549,7 +569,7 @@ function readTextFile(file)
  */
 function downRecord() {
 	//Load Jszip (minified Because it load faster)
-	loadJS("./scripts/jszip/dist/jszip.js", function() {
+	loadJS("./lib/jszip/dist/jszip.js", function() {
 		let zip = new JSZip();
 
 		textData = readTextFile("./download/download.html");
@@ -645,7 +665,7 @@ class Button {
 		this.button.onclick = this.func;
 		this.button.id = this.id;
 		this.button.style.backgroundImage = this.icon;
-		this.button.classList.add("rr-block");
+		
 		this.button.title = this.text;
 	}
 
@@ -761,6 +781,7 @@ function makeElementMovable(element) {
  */
 function createBaseDiv(mainDivId) {
 	var mainDiv = document.createElement("div");
+	mainDiv.classList.add("rr-block");
 	mainDiv.id = mainDivId;
 	document.body.appendChild(mainDiv);
 	return mainDiv;
@@ -810,13 +831,13 @@ window.onload = function() {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Button.html">Button</a></li></ul><h3>Global</h3><ul><li><a href="global.html#areRecordScriptsLoaded">areRecordScriptsLoaded</a></li><li><a href="global.html#arrayValue">arrayValue</a></li><li><a href="global.html#changeMainDivSize">changeMainDivSize</a></li><li><a href="global.html#computeTextTime">computeTextTime</a></li><li><a href="global.html#computeTimeBetweenTwoFrames">computeTimeBetweenTwoFrames</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#createBaseDiv">createBaseDiv</a></li><li><a href="global.html#cssData">cssData</a></li><li><a href="global.html#downButton">downButton</a></li><li><a href="global.html#downRecord">downRecord</a></li><li><a href="global.html#encodingType">encodingType</a></li><li><a href="global.html#eventBlob">eventBlob</a></li><li><a href="global.html#events">events</a></li><li><a href="global.html#interval">interval</a></li><li><a href="global.html#isActive">isActive</a></li><li><a href="global.html#isDragged">isDragged</a></li><li><a href="global.html#isMenuOpen">isMenuOpen</a></li><li><a href="global.html#isPauseButtonCreated">isPauseButtonCreated</a></li><li><a href="global.html#jsData">jsData</a></li><li><a href="global.html#launchRecord">launchRecord</a></li><li><a href="global.html#loadCss">loadCss</a></li><li><a href="global.html#mainDiv">mainDiv</a></li><li><a href="global.html#makeElementMovable">makeElementMovable</a></li><li><a href="global.html#millisToMinutesAndSeconds">millisToMinutesAndSeconds</a></li><li><a href="global.html#openMenu">openMenu</a></li><li><a href="global.html#pauseButton">pauseButton</a></li><li><a href="global.html#pauseRecord">pauseRecord</a></li><li><a href="global.html#pauseReplayer">pauseReplayer</a></li><li><a href="global.html#readTextFile">readTextFile</a></li><li><a href="global.html#recordButton">recordButton</a></li><li><a href="global.html#recorder">recorder</a></li><li><a href="global.html#recStream">recStream</a></li><li><a href="global.html#resumeRecord">resumeRecord</a></li><li><a href="global.html#saveAs">saveAs</a></li><li><a href="global.html#sliderBar">sliderBar</a></li><li><a href="global.html#soundBlob">soundBlob</a></li><li><a href="global.html#stopRecord">stopRecord</a></li><li><a href="global.html#textData">textData</a></li><li><a href="global.html#textTime">textTime</a></li><li><a href="global.html#totalTime">totalTime</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Button.html">Button</a></li></ul><h3>Global</h3><ul><li><a href="global.html#areRecordScriptsLoaded">areRecordScriptsLoaded</a></li><li><a href="global.html#arrayValue">arrayValue</a></li><li><a href="global.html#audioParts">audioParts</a></li><li><a href="global.html#changeMainDivSize">changeMainDivSize</a></li><li><a href="global.html#computeTextTime">computeTextTime</a></li><li><a href="global.html#computeTimeBetweenTwoFrames">computeTimeBetweenTwoFrames</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#createBaseDiv">createBaseDiv</a></li><li><a href="global.html#cssData">cssData</a></li><li><a href="global.html#downButton">downButton</a></li><li><a href="global.html#downRecord">downRecord</a></li><li><a href="global.html#encodingType">encodingType</a></li><li><a href="global.html#eventBlob">eventBlob</a></li><li><a href="global.html#events">events</a></li><li><a href="global.html#interval">interval</a></li><li><a href="global.html#isActive">isActive</a></li><li><a href="global.html#isDragged">isDragged</a></li><li><a href="global.html#isMenuOpen">isMenuOpen</a></li><li><a href="global.html#isPauseButtonCreated">isPauseButtonCreated</a></li><li><a href="global.html#jsData">jsData</a></li><li><a href="global.html#launchRecord">launchRecord</a></li><li><a href="global.html#loadCss">loadCss</a></li><li><a href="global.html#mainDiv">mainDiv</a></li><li><a href="global.html#makeElementMovable">makeElementMovable</a></li><li><a href="global.html#millisToMinutesAndSeconds">millisToMinutesAndSeconds</a></li><li><a href="global.html#openMenu">openMenu</a></li><li><a href="global.html#pauseButton">pauseButton</a></li><li><a href="global.html#pauseRecord">pauseRecord</a></li><li><a href="global.html#pauseReplayer">pauseReplayer</a></li><li><a href="global.html#readTextFile">readTextFile</a></li><li><a href="global.html#recordButton">recordButton</a></li><li><a href="global.html#recorder">recorder</a></li><li><a href="global.html#recStream">recStream</a></li><li><a href="global.html#resumeRecord">resumeRecord</a></li><li><a href="global.html#saveAs">saveAs</a></li><li><a href="global.html#sliderBar">sliderBar</a></li><li><a href="global.html#soundBlob">soundBlob</a></li><li><a href="global.html#stopRecord">stopRecord</a></li><li><a href="global.html#textData">textData</a></li><li><a href="global.html#textTime">textTime</a></li><li><a href="global.html#totalTime">totalTime</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.5</a> on Tue Aug 25 2020 13:40:41 GMT+0200 (heure d’été d’Europe centrale)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.5</a> on Tue Aug 25 2020 16:31:34 GMT+0200 (heure d’été d’Europe centrale)
 </footer>
 
 <script> prettyPrint(); </script>
