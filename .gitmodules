@@ -1,0 +1,3 @@
+[submodule "lib/concatenate-blob"]
+	path = lib/concatenate-blob
+	url = https://github.com/muaz-khan/ConcatenateBlobs
