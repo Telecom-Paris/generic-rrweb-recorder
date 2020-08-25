@@ -1,3 +1,6 @@
 [submodule "lib/concatenate-blob"]
 	path = lib/concatenate-blob
 	url = https://github.com/muaz-khan/ConcatenateBlobs
+[submodule "lib/web-audio-recorder"]
+	path = lib/web-audio-recorder
+	url = https://github.com/higuma/web-audio-recorder-js.git
