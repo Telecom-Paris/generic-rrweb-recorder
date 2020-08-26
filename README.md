@@ -10,6 +10,9 @@ Just include a line in the header of your website :
 <script type="text/javascript" src="path/to/recorder.js"></script>
 ```
 
+If you are looking for the minified version, it can be found under [min](min/) folder.
+See [here](#the-minified-version) for mor info about the minified version.
+
 The script takes care of the rest.
 
 ### Customize it as you want:
@@ -35,10 +38,17 @@ The script has a basic configuration, but here is what you can customize:
 
 To build the documentation, you need [jsdoc](https://jsdoc.app/index.html).
 
-Once installed, you can build the documentation using
+Once installed, you can build the documentation using:
 ```jsdoc *.js README.md -d docs/generated-doc/```
 
-You will find it under the doc folder, in HTML format
+You will find it under the docs folder, in HTML format. ([here](docs/generated-doc))
+
+### The minified version
+
+To make the minified version, you need [Uglifyjs](https://github.com/mishoo/UglifyJS).
+
+Once installed, you can use it doing:
+```uglifyjs --ecma 6 -o min/recorder.min.js recorder.js```
 
 ### Licences and credits
 
@@ -49,6 +59,8 @@ This project use the following libraries:
 [jszip](https://github.com/Stuk/jszip)
 
 [WebAudioRecorder](https://github.com/higuma/web-audio-recorder-js)
+
+[ConcatenateBlob](https://github.com/muaz-khan/ConcatenateBlobs)
 
 Because the images we use are free, here is the websites where we found them:
 - https://www.flaticon.com

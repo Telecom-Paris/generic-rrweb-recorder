@@ -601,9 +601,6 @@ function buttonPosition(button) {
  * element
  */
 class Button {
-	button;
-	width;
-
 	constructor(parentElem, func, id, text, icon, rightOf) {
 		this.parentElem = parentElem;
 		this.func = func;
