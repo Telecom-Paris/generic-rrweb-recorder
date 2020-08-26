@@ -159,6 +159,12 @@ let pauseReplayer = null;
  * @type {interger}
  */
 let arrayValue;
+/**
+ * Check if the user came back in the timeline of events.
+ * Default value: false
+ * @type {boolean}
+ */
+let isUserComingBack = false;
 
 /**
  * Load different JS library and callback when fully loaded
@@ -244,7 +250,8 @@ function logger(stringLog){
  * Compute the current time when the user is moving the range sliderBar
  */
 function computeTextTime() {
-	decimalValue = (sliderBar.value + "").split(".")[1];
+	isUserComingBack = true;
+	let decimalValue = (sliderBar.value + "").split(".")[1];
 	logger("onInput works, value is " + sliderBar.value);
 	logger("Extracted decimal is " + decimalValue);
 	if (decimalValue == null) {
@@ -270,13 +277,13 @@ function resumeRecord()
 {
 	if (!isDragged) {
 
-		document.getElementById('pauseRecord').style.backgroundImage = "url('media/pause32.png')";
+		pauseButton.style.backgroundImage = "url('media/pause32.png')";
 		document.getElementById('pauseRecord').onclick = pauseRecord;
 
-		//if (isUserComingBack) {
-		//	console.log("I split from 0 to " + arrayValue);
-		//	events = events.slice(0, arrayValue);
-		//}
+		if (isUserComingBack) {
+			console.log("I split from 0 to " + arrayValue);
+			events = events.slice(0, arrayValue);
+		}
 
 		document.getElementById('sliderDiv').style.visibility = "hidden";
 
@@ -302,13 +309,12 @@ function pauseRecord() {
 		isActive();
 	clearInterval(interval);
 
-	document.getElementById('pauseRecord').style.backgroundImage = "url('media/resume32.png')";
+	pauseButton.style.backgroundImage = "url('media/resume32.png')";
 	document.getElementById('pauseRecord').onclick = resumeRecord;
 
 	console.log("I set in pause");
 	if (events.length > 2) {
 		totalTime = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]);
-		//changeMainDivSize(0, 20);
 		if (!pauseReplayer) {
 		sliderDiv = createBaseDiv("sliderDiv");
 		textTime = document.createElement("p");
@@ -395,9 +401,9 @@ function launchRecord() {
 				interval = setInterval(function () {logger(events);}, 1000);
 
 				// Update the style of record button and the onclick function.
-				document.getElementById('recordButton').style.backgroundColor = "white";
-				document.getElementById('recordButton').style.backgroundImage = "url('media/recording32.png')";
-				document.getElementById('recordButton').style.border = "1px solid black";
+				recordButton.style.backgroundColor = "white";
+				recordButton.style.backgroundImage = "url('media/recording32.png')";
+				recordButton.style.border = "1px solid black";
 				document.getElementById('recordButton').onclick = stopRecord;
 
 				//Opening the menu to create
@@ -414,9 +420,9 @@ function stopRecord() {
 
 	// Restore the style and onclick of recordButton
 	if (!isDragged) {
-		document.getElementById('recordButton').style.backgroundColor = "#d92027";
-		document.getElementById('recordButton').style.backgroundImage = "url('media/camera32.png')";
-		document.getElementById('recordButton').style.border = "none";
+		recordButton.style.backgroundColor = "#d92027";
+		recordButton.style.backgroundImage = "url('media/camera32.png')";
+		recordButton.style.border = "none";
 		document.getElementById('recordButton').onclick = launchRecord;
 
 		console.log("The recording has been stopped");
@@ -634,8 +640,8 @@ class Button {
 		this.button.onclick = this.func;
 		this.button.id = this.id;
 		this.button.style.backgroundImage = this.icon;
-		
 		this.button.title = this.text;
+		this.style = this.button.style;
 	}
 
 	/**
