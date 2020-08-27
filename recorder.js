@@ -242,7 +242,7 @@ function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
 
 function logger(stringLog){
 	if (config.debug) {
-		console.log(stringLog);
+		console.log("generic-rrweb-recorder: " + stringLog);
 	}
 }
 
@@ -282,14 +282,14 @@ function resumeRecord()
 	if (!isDragged) {
 
 		pauseButton.style.backgroundImage = "url('media/pause32.png')";
-		document.getElementById('pauseRecord').onclick = pauseRecord;
+		document.getElementById('rrweb-pauseRecord').onclick = pauseRecord;
 
 		if (isUserComingBack) {
 			console.log("I split from 0 to " + arrayValue);
 			events = events.slice(0, arrayValue);
 		}
 
-		document.getElementById('sliderDiv').style.visibility = "hidden";
+		document.getElementById('rrweb-sliderDiv').style.visibility = "hidden";
 
 		recorder.startRecording();
 
@@ -315,16 +315,16 @@ function pauseRecord() {
 		clearInterval(interval);
 
 		pauseButton.style.backgroundImage = "url('media/resume32.png')";
-		document.getElementById('pauseRecord').onclick = resumeRecord;
+		document.getElementById('rrweb-pauseRecord').onclick = resumeRecord;
 
 		console.log("I set in pause");
 		if (events.length > 2) {
 			totalTime = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]);
 			if (!pauseReplayer) {
-				sliderDiv = createBaseDiv("sliderDiv");
+				sliderDiv = createBaseDiv("rrweb-sliderDiv");
 				textTime = document.createElement("p");
 				sliderBar = document.createElement("input");
-				sliderBar.id = "sliderBar";
+				sliderBar.id = "rrweb-sliderBar";
 				sliderBar.type = "range";
 				sliderBar.min = "0";
 				sliderBar.step = "0.1";
@@ -334,7 +334,7 @@ function pauseRecord() {
 				sliderDiv.appendChild(textTime);
 				sliderDiv.appendChild(sliderBar);
 			} else {
-				document.getElementById('sliderDiv').style.visibility = "visible";
+				document.getElementById('rrweb-sliderDiv').style.visibility = "visible";
 			}
 
 			// We stop audioRecorder
@@ -411,7 +411,7 @@ function launchRecord() {
 				recordButton.style.backgroundColor = "white";
 				recordButton.style.backgroundImage = "url('media/recording32.png')";
 				recordButton.style.border = "1px solid black";
-				document.getElementById('recordButton').onclick = stopRecord;
+				document.getElementById('rrweb-recordButton').onclick = stopRecord;
 
 				//Opening the menu to create
 				openMenu();
@@ -430,7 +430,7 @@ function stopRecord() {
 		recordButton.style.backgroundColor = "#d92027";
 		recordButton.style.backgroundImage = "url('media/camera32.png')";
 		recordButton.style.border = "none";
-		document.getElementById('recordButton').onclick = launchRecord;
+		document.getElementById('rrweb-recordButton').onclick = launchRecord;
 
 		console.log("The recording has been stopped");
 		// We stop Rrweb
@@ -457,7 +457,7 @@ function stopRecord() {
 			if (events.length > 2) {
 				changeMainDivSize(80, 0);
 				logger("I can download the page");
-				downButton = new Button(mainDiv, downRecord, "downRecord", "Download your record", 'media/down32.png', recordButton);
+				downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
 				downButton.createChildButton();
 				downButton.show();
 			}
@@ -485,7 +485,7 @@ function openMenu() {
 		if (!isMenuOpen) {
 			changeMainDivSize(80, 0);
 			if (!isPauseButtonCreated) {
-				pauseButton = new Button(mainDiv, pauseRecord, "pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
+				pauseButton = new Button(mainDiv, pauseRecord, "rrweb-pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
 				isPauseButtonCreated = true;
 				pauseButton.createChildButton();
 			} else { pauseButton.show(); }
@@ -586,7 +586,7 @@ function buttonPosition(button) {
 	if (config.position.search("top") > -1)
 		button.style.top = "50";
 	if (config.position.search("middle") > -1)
-		button.style.top = "50%";
+		button.style.top = "50";
 	if (config.position.search("-right") > -1)
 		button.style.right = "50";
 	if (config.position.search("-left") > -1)
@@ -657,7 +657,7 @@ class Button {
 	 */
 	createMenuButton() {
 		this.createBasicButton();
-		this.button.classList.add("Buttons");
+		this.button.classList.add("rrweb-Buttons");
 		if (config.recordButtonColor)
 			this.button.style.backgroundColor = config.recordButtonColor;
 		this.parentElem.appendChild(this.button);
@@ -671,8 +671,8 @@ class Button {
 		this.createBasicButton();
 		if (config.recordPauseColor)
 			this.button.style.backgroundColor = config.pauseButtonColor;
-		this.button.classList.add("Buttons");
-		this.button.classList.add("ChildButton")
+		this.button.classList.add("rrweb-Buttons");
+		this.button.classList.add("rrweb-ChildButton")
 		this.button.style.left = this.width + "px";
 		this.parentElem.appendChild(this.button);
 	}
@@ -691,6 +691,7 @@ function makeElementMovable(element) {
 	dragElement(element);
 
 	function dragElement(elmnt) {
+        logger("Make element draggable");
 		var pos1 = 0, pos2 = 0, mouseX = 0, mouseY = 0;
 		let isClick = true;
 		if (document.getElementById(elmnt.id + "header")) {
@@ -781,6 +782,7 @@ function loadCss(path) {
 	link.href = path;
 	link.media = 'all';
 	head.appendChild(link);
+    logger("Loaded Css !");
 }
 
 /**
@@ -788,18 +790,21 @@ function loadCss(path) {
  * @function window.onload
  */
 window.onload = function() {
+    logger("Page has finished Loading, launching generic-rrweb-recorder");
 	// We create a mainDiv in which wi will display all menu element as block
-	mainDiv = createBaseDiv("mainDivButton");
+	mainDiv = createBaseDiv("rrweb-mainDivButton");
 
 	// We load CSS
 	loadCss("media/style.css");
 
 	// We define a button that will launch recording
-	recordButton = new Button(mainDiv, loadScripts, "recordButton", "Start recording! ", 'media/camera32.png', null);
+	recordButton = new Button(mainDiv, loadScripts, "rrweb-recordButton", "Start recording! ", 'media/camera32.png', null);
 	recordButton.createMenuButton();
 
 	buttonPosition(mainDiv);
 
+    logger("Main Button has been created");
+    
 	if (config.movable)
 		makeElementMovable(mainDiv);
 }

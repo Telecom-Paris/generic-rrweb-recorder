@@ -1,10 +1,10 @@
-#mainDivButton {
+#rrweb-mainDivButton {
 	position: absolute;
 	width: 70px;
 	height: 70px;
 }
 
-.Buttons {
+.rrweb-Buttons {
 	border-radius: 50%;
 	border: none;
 	background-repeat: no-repeat;
@@ -15,16 +15,16 @@
 	position: absolute;
 }
 
-.childButton {
+.rrweb-ChildButton {
 	background-color: #fdd03b;
 }
 
-#recordButton {
+#rrweb-recordButton {
 	background-color: #d92027;
 	cursor: move;
 }
 
-#downloadRecord {
+#rrweb-downloadRecord {
 	height: 70px;
 	width: 70px;
 	background-color: #fdd03b;
@@ -32,18 +32,19 @@
 	cursor: pointer;
 }
 
-#sliderDiv {
+#rrweb-sliderDiv {
+    z-index: 10;
 	position: fixed;
 	bottom: 0px;
 	width: 100%;
 }
 
-#sliderDiv input {
+#rrweb-sliderDiv input {
 	bottom: 0px;
 	width: 80%;
 }
 
-#sliderBar {
+#rrweb-sliderBar {
   -webkit-appearance: none;
   width: 100%;
   height: 15px;
@@ -54,7 +55,7 @@
   transition: opacity .2s;
 }
 
-#sliderBar::-webkit-slider-thumb {
+#rrweb-sliderBar::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 25px;
@@ -64,11 +65,10 @@
   cursor: pointer;
 }
 
-#sliderBar::-moz-range-thumb {
+#rrweb-sliderBar::-moz-range-thumb {
   width: 25px;
   height: 25px;
   border-radius: 15%;
   background: #4CAF50;
   cursor: pointer;
 }
-
