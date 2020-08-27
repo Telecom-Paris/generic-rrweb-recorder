@@ -250,8 +250,12 @@ function logger(stringLog){
  * Compute the current time when the user is moving the range sliderBar
  */
 function computeTextTime() {
-	isUserComingBack = true;
 	let decimalValue = (sliderBar.value + "").split(".")[1];
+	isUserComingBack = true;
+	let percentage = (sliderBar.value / events.length) * 100;
+
+	logger("Computed percentage is " + percentage);
+	sliderBar.style.background = 'linear-gradient(to right, #82CFD0 0%, #82CFD0 ' + percentage + '%, #999999 ' + percentage + '%, #999999 100%)';
 	logger("onInput works, value is " + sliderBar.value);
 	logger("Extracted decimal is " + decimalValue);
 	if (decimalValue == null) {
@@ -305,40 +309,43 @@ function resumeRecord()
 function pauseRecord() {
 	let sliderDiv;
 
-	if (isActive)
-		isActive();
-	clearInterval(interval);
+	if (!isDragged) {
+		if (isActive)
+			isActive();
+		clearInterval(interval);
 
-	pauseButton.style.backgroundImage = "url('media/resume32.png')";
-	document.getElementById('pauseRecord').onclick = resumeRecord;
+		pauseButton.style.backgroundImage = "url('media/resume32.png')";
+		document.getElementById('pauseRecord').onclick = resumeRecord;
 
-	console.log("I set in pause");
-	if (events.length > 2) {
-		totalTime = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]);
-		if (!pauseReplayer) {
-		sliderDiv = createBaseDiv("sliderDiv");
-		textTime = document.createElement("p");
-		sliderBar = document.createElement("input");
-		sliderBar.id = "sliderBar";
-		sliderBar.type = "range";
-		sliderBar.min = "0";
-		sliderBar.step = "0.1";
-		pauseReplayer = new rrweb.Replayer(events, {root: document.body});
-		pauseReplayer.enableInteract();
-		sliderBar.oninput = computeTextTime;
-		sliderDiv.appendChild(textTime);
-		sliderDiv.appendChild(sliderBar);
-		} else {
-			document.getElementById('sliderDiv').style.visibility = "visible";
+		console.log("I set in pause");
+		if (events.length > 2) {
+			totalTime = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]);
+			if (!pauseReplayer) {
+				sliderDiv = createBaseDiv("sliderDiv");
+				textTime = document.createElement("p");
+				sliderBar = document.createElement("input");
+				sliderBar.id = "sliderBar";
+				sliderBar.type = "range";
+				sliderBar.min = "0";
+				sliderBar.step = "0.1";
+				pauseReplayer = new rrweb.Replayer(events, {root: document.body});
+				pauseReplayer.enableInteract();
+				sliderBar.oninput = computeTextTime;
+				sliderDiv.appendChild(textTime);
+				sliderDiv.appendChild(sliderBar);
+			} else {
+				document.getElementById('sliderDiv').style.visibility = "visible";
+			}
+
+			// We stop audioRecorder
+			recorder.finishRecording();
+
+			textTime.innerHTML = totalTime + " / " + totalTime;
+			sliderBar.max = events.length;
+			sliderBar.value = events.length;
+			sliderBar.style.background = 'linear-gradient(to right, #82CFD0 0%, #82CFD0 100%, #999999 100%, #999999 100%)';
+			pauseReplayer.pause(events[events.length - 1].timestamp, events[0].timestamp);
 		}
-
-		// We stop audioRecorder
-		recorder.finishRecording();
-
-		textTime.innerHTML = totalTime + " / " + totalTime;
-		sliderBar.max = events.length;
-		sliderBar.value = events.length;
-		pauseReplayer.pause(events[events.length - 1].timestamp, events[0].timestamp);
 	}
 }
 
