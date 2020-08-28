@@ -164,7 +164,13 @@ let arrayValue;
  * Default value: false
  * @type {boolean}
  */
-let isUserComingBack = false;
+// let isUserComingBack = false;
+
+let recorderState = null;
+
+let encodingOver = false;
+
+let gifLoadingButton;
 
 /**
  * Load different JS library and callback when fully loaded
@@ -277,10 +283,11 @@ function computeTextTime() {
  * This function is very similar to {@link launchRecord}, excepted we do not
  * need to check for permissions, they should be granted
  */
-function resumeRecord()
-{
+function resumeRecord(){
 	if (!isDragged) {
 
+        recorderState = "RECORDING";
+        
 		pauseButton.style.backgroundImage = "url('media/pause32.png')";
 		document.getElementById('rrweb-pauseRecord').onclick = pauseRecord;
 
@@ -310,6 +317,9 @@ function pauseRecord() {
 	let sliderDiv;
 
 	if (!isDragged) {
+        
+        recorderState = "PAUSED";
+        
 		if (isActive)
 			isActive();
 		clearInterval(interval);
@@ -354,6 +364,9 @@ function pauseRecord() {
  */
 function launchRecord() {
 	if (!isDragged) {
+        
+        recorderState = "RECORDING";
+        
 		console.log("Recording has started! ");
 
 		navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(function(stream) {
@@ -385,9 +398,14 @@ function launchRecord() {
 
 				recorder.onComplete = function(recorder, blob) {
 					logger("Encoding complete");
-					logger(soundBlob);
 					logger(URL.createObjectURL(blob));
 					audioParts.push(blob);
+                    // If the recorder has been fully stopped, print the downloadButton
+                    if (recorderState == "STOPPED"){
+                        encodingOver = true;
+                        gifLoadingButton.hide();
+                        displayDownButton();
+                    }
 				}
 
 				recorder.setOptions({
@@ -424,9 +442,11 @@ function launchRecord() {
  * This function stop the record of the screen and audio.
  */
 function stopRecord() {
-
 	// Restore the style and onclick of recordButton
 	if (!isDragged) {
+        
+        recorderState = "STOPPED";
+        
 		recordButton.style.backgroundColor = "#d92027";
 		recordButton.style.backgroundImage = "url('media/camera32.png')";
 		recordButton.style.border = "none";
@@ -448,22 +468,49 @@ function stopRecord() {
 		// Set the event as Blob
 		eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
 
-		// We concatenate all audio parts.
-		loadJS("./lib/concatenate-blob/ConcatenateBlobs.js", function () {
-			ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
-				soundBlob = resultingBlob;
-			});
-
-			if (events.length > 2) {
-				changeMainDivSize(80, 0);
-				logger("I can download the page");
-				downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
-				downButton.createChildButton();
-				downButton.show();
-			}
-		});
+        if (encodingOver == false) {
+            //Display GIF loading
+            gifLoadingButton = new Button(mainDiv, null, "rrweb-loadingDown", "Your download is almost ready !", 'media/loading32.gif', recordButton);
+            gifLoadingButton.createChildButton();
+            gifLoadingButton.setClickable(false);
+            gifLoadingButton.show();
+        }
 	}
 }
+
+function displayDownButton() {
+    
+    //avoid concatenating if there is only one element
+			if (audioParts.length > 1) {
+				logger("Loading ConcatenateBlobs");
+				// We concatenate all audio parts.
+				loadJS("./lib/concatenate-blob/ConcatenateBlobs.js", function () {
+					ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
+						soundBlob = resultingBlob;
+					});
+
+					if (events.length > 2) {
+						changeMainDivSize(80, 0);
+						logger("I can download the page");
+						downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
+						downButton.createChildButton();
+						downButton.show();
+					}
+				});
+			}
+			else {
+				logger("No need to load ConcatenateBlobs");
+				soundBlob = audioParts[0];
+				if (events.length > 2) {
+						changeMainDivSize(80, 0);
+						logger("I can download the page");
+						downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
+						downButton.createChildButton();
+						downButton.show();
+				}
+			}
+}
+
 
 /**
  * Change the size of the mainDiv
@@ -623,6 +670,10 @@ class Button {
 		this.width = rightOf != null ? rightOf.getWidth() + 80 : 0;
 	}
 
+	setClickable(isClickable) {
+        this.button.disabled = isClickable;
+    }
+	
 	/**
 	 * Return width of the button
 	 */
