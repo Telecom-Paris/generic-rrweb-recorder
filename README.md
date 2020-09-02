@@ -7,10 +7,14 @@ Just include a line in the header of your website :
 (or at the bottom of your body if you want your website to load faster)
 
 ```
-<script type="text/javascript" src="path/to/recorder.js"></script>
+<script type="text/javascript" type="module" src="path/to/recorder.js"></script>
 ```
 
 If you are looking for the minified version, it can be found under [min](min/) folder.
+To include the minified version, you can do:
+```
+<script type="text/javascript" type="module" src="path/to/recorder.min.js"></script>
+```
 See [here](#the-minified-version) for mor info about the minified version.
 
 The script takes care of the rest.
@@ -39,16 +43,16 @@ The script has a basic configuration, but here is what you can customize:
 To build the documentation, you need [jsdoc](https://jsdoc.app/index.html).
 
 Once installed, you can build the documentation using:
-```jsdoc *.js README.md -d docs/generated-doc/```
+```jsdoc srcs/*.js README.md -d docs/generated-doc/```
 
 You will find it under the docs folder, in HTML format. ([here](docs/generated-doc))
 
 ### The minified version
 
-To make the minified version, you need [Uglifyjs](https://github.com/mishoo/UglifyJS).
+To make the minified version, you need [Uglifyjs-folder](https://github.com/ionutvmi/uglifyjs-folder).
 
 Once installed, you can use it doing:
-```uglifyjs --ecma 6 -o min/recorder.min.js recorder.js```
+```uglifyjs-folder -e -o min/ srcs/```
 
 ### Licences and credits
 

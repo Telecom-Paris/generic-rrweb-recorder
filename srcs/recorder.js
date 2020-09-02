@@ -1,3 +1,7 @@
+export {config};
+import * as buttonClass from './buttonClass.js';
+import * from './utils.js';
+
 /**
  * This is the default configuration variable
  * @type {Object}
@@ -177,78 +181,40 @@ let gifLoadingButton;
  * @param {string} src The path of the script (can be relative or absolute)
  * @param {Function} cb Callback, function to launch when loaded
 */
-(function(w){
-	var loadJS = function(src, cb, ordered){
-		"use strict";
-		var tmp;
-		var ref = w.document.getElementsByTagName("script")[0];
-		var script = w.document.createElement("script");
 
-		if (typeof(cb) === 'boolean') {
-			tmp = ordered;
-			ordered = cb;
-			cb = tmp;
-		}
+function loadJS(src, cb, ordered) {
+	"use strict";
+	var tmp;
+	var ref = document.getElementsByTagName("script")[0];
+	var script = document.createElement("script");
 
-		script.src = src;
-		script.async = !ordered;
-		ref.parentNode.insertBefore( script, ref );
-
-		if (cb && typeof(cb) === "function") {
-			script.onload = cb;
-		}
-		return script;
-	};
-	// commonjs
-	if( typeof module !== "undefined"){
-		module.exports = loadJS;
+	if (typeof(cb) === 'boolean') {
+		tmp = ordered;
+		ordered = cb;
+		cb = tmp;
 	}
-	else {
-		w.loadJS = loadJS;
+
+	script.src = src;
+	script.async = !ordered;
+	ref.parentNode.insertBefore(script, ref);
+
+	if (cb && typeof(cb) === "function") {
+		script.onload = cb;
 	}
-}(typeof global !== "undefined" ? global : this));
+	return script;
+}
 
 function loadScripts() {
 	// We make sure this is not a drag, but a click
 	if (!isDragged) {
 		// We include Rrweb
 		loadJS("./lib/rrweb/dist/rrweb.min.js", function() {
-			loadJS("./lib/web-audio-recorder/lib/WebAudioRecorder.js", function() {
+			loadJS("./lib/web-audio-recorder/lib-minified/WebAudioRecorder.min.js", function() {
 			// Once script has been loaded, launch the rest of the code
 				areRecordScriptsLoaded = true;
 				launchRecord();
 			});
 		});
-	}
-}
-
-/**
- * Turn milliseconds to minutes and seconds in the following format:
- * '00:00'
- * @param {integer} millis number of millis to convert
- */
-function millisToMinutesAndSeconds(millis) {
-  var minutes = Math.floor(millis / 60000);
-  var seconds = ((millis % 60000) / 1000).toFixed(0);
-  return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
-}
-
-/**
- * Compute time in minute and second between two rrweb events.
- * Compute doing firstFrame - secondFrame
- * @param {rrweb-event} firstFrame The first frame
- * @param {rrweb-event} secondFrame The second frame
- * @returns {string} String in the format "00:00"
- */
-function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
-	logger("Recording time is event[last] - event[0] = " + (firstFrame.timestamp - secondFrame.timestamp));
-	logger("Aka " + millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp) + " mn and secs");
-	return millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp);
-}
-
-function logger(stringLog){
-	if (config.debug) {
-		console.log("generic-rrweb-recorder: " + stringLog);
 	}
 }
 
@@ -285,9 +251,7 @@ function computeTextTime() {
  */
 function resumeRecord(){
 	if (!isDragged) {
-
-        recorderState = "RECORDING";
-        
+		recorderState = "RECORDING";
 		pauseButton.style.backgroundImage = "url('media/pause32.png')";
 		document.getElementById('rrweb-pauseRecord').onclick = pauseRecord;
 
@@ -317,9 +281,7 @@ function pauseRecord() {
 	let sliderDiv;
 
 	if (!isDragged) {
-        
-        recorderState = "PAUSED";
-        
+		recorderState = "PAUSED";
 		if (isActive)
 			isActive();
 		clearInterval(interval);
@@ -364,19 +326,13 @@ function pauseRecord() {
  */
 function launchRecord() {
 	if (!isDragged) {
-        
-        recorderState = "RECORDING";
-        
+		recorderState = "RECORDING";
 		console.log("Recording has started! ");
-
 		navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(function(stream) {
 			logger("getUserMedia() success, stream created, initializing WebAudioRecorder...");
-
 			let audioContext = new AudioContext();
-
 			//update the format
-			logger("Format: 2 channel mp3 @ " + audioContext.sampleRate / 1000 + "kHz");
-
+			logger("Format: 2 channel " + encodingType + " @ " + audioContext.sampleRate / 1000 + "kHz");
 			//assign to recStream for later use
 			recStream = stream;
 
@@ -401,11 +357,11 @@ function launchRecord() {
 					logger(URL.createObjectURL(blob));
 					audioParts.push(blob);
                     // If the recorder has been fully stopped, print the downloadButton
-                    if (recorderState == "STOPPED"){
-                        encodingOver = true;
-                        gifLoadingButton.hide();
-                        displayDownButton();
-                    }
+					if (recorderState == "STOPPED"){
+						encodingOver = true;
+						gifLoadingButton.hide();
+						displayDownButton();
+					}
 				}
 
 				recorder.setOptions({
@@ -444,9 +400,7 @@ function launchRecord() {
 function stopRecord() {
 	// Restore the style and onclick of recordButton
 	if (!isDragged) {
-        
-        recorderState = "STOPPED";
-        
+		recorderState = "STOPPED";
 		recordButton.style.backgroundColor = "#d92027";
 		recordButton.style.backgroundImage = "url('media/camera32.png')";
 		recordButton.style.border = "none";
@@ -468,60 +422,45 @@ function stopRecord() {
 		// Set the event as Blob
 		eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
 
-        if (encodingOver == false) {
-            //Display GIF loading
-            gifLoadingButton = new Button(mainDiv, null, "rrweb-loadingDown", "Your download is almost ready !", 'media/loading32.gif', recordButton);
-            gifLoadingButton.createChildButton();
-            gifLoadingButton.setClickable(false);
-            gifLoadingButton.show();
-        }
+		if (encodingOver == false) {
+			//Display GIF loading
+			gifLoadingButton = new buttonClass.Button(mainDiv, null, "rrweb-loadingDown", "Your download is almost ready !", 'media/loading32.gif', recordButton);
+			gifLoadingButton.createChildButton();
+			gifLoadingButton.setClickable(false);
+			gifLoadingButton.show();
+		}
 	}
 }
 
 function displayDownButton() {
-    
-    //avoid concatenating if there is only one element
-			if (audioParts.length > 1) {
-				logger("Loading ConcatenateBlobs");
-				// We concatenate all audio parts.
-				loadJS("./lib/concatenate-blob/ConcatenateBlobs.js", function () {
-					ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
-						soundBlob = resultingBlob;
-					});
-
-					if (events.length > 2) {
-						changeMainDivSize(80, 0);
-						logger("I can download the page");
-						downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
-						downButton.createChildButton();
-						downButton.show();
-					}
-				});
-			}
-			else {
-				logger("No need to load ConcatenateBlobs");
-				soundBlob = audioParts[0];
+	//avoid concatenating if there is only one element
+	if (audioParts.length > 1) {
+		logger("Loading ConcatenateBlobs");
+		// We concatenate all audio parts.
+		loadJS("./lib/concatenate-blob/ConcatenateBlobs.js", function () {
+			ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
+				soundBlob = resultingBlob;
+			});
 				if (events.length > 2) {
-						changeMainDivSize(80, 0);
-						logger("I can download the page");
-						downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
-						downButton.createChildButton();
-						downButton.show();
-				}
+				changeMainDivSize(80, 0);
+				logger("I can download the page");
+				downButton = new buttonClass.Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
+				downButton.createChildButton();
+				downButton.show();
 			}
-}
-
-
-/**
- * Change the size of the mainDiv
- * @param {integer} newWidthInPx The will that will be added to the current width
- * @param {integer} newHeightInPx The new height that will be added to the current height
- */
-function changeMainDivSize(newWidthInPx, newHeightInPx) {
-	mainDivWidth += newWidthInPx;
-	mainDivHeight += newHeightInPx;
-	mainDiv.style.width = mainDivWidth + "px";
-	mainDiv.style.height = mainDivHeight + "px";
+		});
+	}
+	else {
+		logger("No need to load ConcatenateBlobs");
+		soundBlob = audioParts[0];
+		if (events.length > 2) {
+			changeMainDivSize(80, 0);
+			logger("I can download the page");
+			downButton = new buttonClass.Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
+			downButton.createChildButton();
+			downButton.show();
+		}
+	}
 }
 
 /**
@@ -532,7 +471,7 @@ function openMenu() {
 		if (!isMenuOpen) {
 			changeMainDivSize(80, 0);
 			if (!isPauseButtonCreated) {
-				pauseButton = new Button(mainDiv, pauseRecord, "rrweb-pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
+				pauseButton = new buttonClass.Button(mainDiv, pauseRecord, "rrweb-pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
 				isPauseButtonCreated = true;
 				pauseButton.createChildButton();
 			} else { pauseButton.show(); }
@@ -638,95 +577,6 @@ function buttonPosition(button) {
 		button.style.right = "50";
 	if (config.position.search("-left") > -1)
 		button.style.left = "50";
-}
-
-/**
- * Create a new Button
- * @class
- *
- * @param {Object} parentElem The parent Node. The button will be append to this
- * node
- *
- * @param {Function} func On click on the button, this function will be
- * triggered
- *
- * @param {string} id The id of the button
- *
- * @param {string} text The name of the button (displayed when the mouse is over
- * the button)
- *
- * @param {string} icon The path of the image displayed in the button
- *
- * @param {Button} rightOf The button will be dispplayed to right of this
- * element
- */
-class Button {
-	constructor(parentElem, func, id, text, icon, rightOf) {
-		this.parentElem = parentElem;
-		this.func = func;
-		this.id = id;
-		this.text = text;
-		this.icon = "url(" + icon + ")";
-		this.width = rightOf != null ? rightOf.getWidth() + 80 : 0;
-	}
-
-	setClickable(isClickable) {
-        this.button.disabled = isClickable;
-    }
-	
-	/**
-	 * Return width of the button
-	 */
-	getWidth() { return this.width; }
-
-	/**
-	 * Set the button to visible
-	 */
-	show() { this.button.style.visibility = "visible"; }
-
-	/**
-	 * Hide the button
-	 */
-	hide() { this.button.style.visibility = "hidden"; }
-
-	/**
-	 * Set all element for a basic button
-	 */
-	createBasicButton() {
-		this.button = document.createElement("input");
-		this.button.type = "button";
-		this.button.onclick = this.func;
-		this.button.id = this.id;
-		this.button.style.backgroundImage = this.icon;
-		this.button.title = this.text;
-		this.style = this.button.style;
-	}
-
-	/**
-	 * Create main Button (recording button).
-	 * Call {@link Button#createBasicButton createBasicButton}.
-	 */
-	createMenuButton() {
-		this.createBasicButton();
-		this.button.classList.add("rrweb-Buttons");
-		if (config.recordButtonColor)
-			this.button.style.backgroundColor = config.recordButtonColor;
-		this.parentElem.appendChild(this.button);
-	}
-
-	/**
-	 * Create others button that are not mainButton.
-	 * Call {@link Button#createBasicButton createBasicButton}.
-	 */
-	createChildButton() {
-		this.createBasicButton();
-		if (config.recordPauseColor)
-			this.button.style.backgroundColor = config.pauseButtonColor;
-		this.button.classList.add("rrweb-Buttons");
-		this.button.classList.add("rrweb-ChildButton")
-		this.button.style.left = this.width + "px";
-		this.parentElem.appendChild(this.button);
-	}
 }
 
 function finishDragging() {
@@ -849,7 +699,7 @@ window.onload = function() {
 	loadCss("media/style.css");
 
 	// We define a button that will launch recording
-	recordButton = new Button(mainDiv, loadScripts, "rrweb-recordButton", "Start recording! ", 'media/camera32.png', null);
+	recordButton = new buttonClass.Button(mainDiv, loadScripts, "rrweb-recordButton", "Start recording! ", 'media/camera32.png', null);
 	recordButton.createMenuButton();
 
 	buttonPosition(mainDiv);
