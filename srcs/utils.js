@@ -1,5 +1,8 @@
-import {config} from './recorder.js';
+import {config, mainDiv} from './recorder.js';
 export {millisToMinutesAndSeconds, computeTimeBetweenTwoFrames, logger, changeMainDivSize};
+
+let mainDivWidth = 70;
+let mainDivHeight = 70;
 
 /**
  * Turn milliseconds to minutes and seconds in the following format:

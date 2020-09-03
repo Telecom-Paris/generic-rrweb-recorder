@@ -6,62 +6,12 @@
 		<link rel="stylesheet" type="text/css" href="./js/style.css">
 		<script src="./js/index.js"></script>
 		<script>
-			let events;
-			let isLoaded = 0;
 			let audio;
 			let replay;
 
-			function startLoading() {
-				loadFile(document.getElementById('eventinput'), "TEXT");
-				audio = new Audio('data/sound.mp3');
-				//loadFile(document.getElementById('audioinput'), "AUDIO");
-			}
-
-			function loadFile(id, type) {
-				var input, file, fr;
-
-				if (typeof window.FileReader !== 'function') {
-					alert("The file API isn't supported on this browser yet.");
-					return;
-				}
-
-				input = id;
-				if (!input) {
-					alert("Um, couldn't find the fileinput element.");
-				} else if (!input.files) {
-					alert("This browser doesn't seem to support the `files` property of file inputs.");
-				} else if (!input.files[0]) {
-					alert("Please select a file before clicking 'Load'");
-				} else {
-					file = input.files[0];
-					fr = new FileReader();
-					if (type == "TEXT") {
-						fr.onload = receivedText;
-						fr.readAsText(file);
-					} else if (type == "AUDIO") {
-						fr.onload = receivedAudio;
-						fr.readAsDataURL(file);
-					}
-				}
-
-				function receivedAudio() {
-					console.log(fr.result);
-					isLoaded++;
-					if (isLoaded == 2)
-						launchRrweb();
-				}
-
-				function receivedText() {
-					console.log(JSON.parse(fr.result));
-					events = JSON.parse(fr.result);
-					isLoaded++;
-					if (isLoaded == 2)
-						launchRrweb();
-				}
-			}
-
 			function launchRrweb()
 			{
+                audio = new Audio('data/sound.mp3');
 				console.log("je lance RRweb");
 				replay = new rrwebPlayer({
 					target: document.body,
@@ -87,17 +37,4 @@
 					console.log("The replay has restarted");
 					audio.play();
 				}, false);
-
 			}
-		</script>
-	</head>
-	<body>
-		<form action='#' onsubmit="return false;">
-			<input type='file' id='eventinput' accept="application/json">
-			<br>
-			<input type='file' id='audioinput' accept="audio/mpeg">
-			<br><br>
-			<input type='button' id='btnLoad' value='Load' onclick='startLoading();'>
-		</form>
-	</body>
-</html>

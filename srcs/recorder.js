@@ -1,6 +1,6 @@
-export {config};
+export {config, mainDiv};
 import * as buttonClass from './buttonClass.js';
-import * from './utils.js';
+import * as utils from './utils.js';
 
 /**
  * This is the default configuration variable
@@ -32,8 +32,6 @@ let isMenuOpen = false;
  * @type {Object}
  */
 let mainDiv;
-let mainDivWidth = 70;
-let mainDivHeight = 70;
 
 /**
  * Record Button Object
@@ -160,7 +158,7 @@ let textTime;
 let pauseReplayer = null;
 /**
  * Frame selected each time the user use the range bar
- * @type {interger}
+ * @type {integer}
  */
 let arrayValue;
 /**
@@ -209,7 +207,7 @@ function loadScripts() {
 	if (!isDragged) {
 		// We include Rrweb
 		loadJS("./lib/rrweb/dist/rrweb.min.js", function() {
-			loadJS("./lib/web-audio-recorder/lib-minified/WebAudioRecorder.min.js", function() {
+			loadJS("./lib/web-audio-recorder/lib/WebAudioRecorder.js", function() {
 			// Once script has been loaded, launch the rest of the code
 				areRecordScriptsLoaded = true;
 				launchRecord();
@@ -226,19 +224,19 @@ function computeTextTime() {
 	isUserComingBack = true;
 	let percentage = (sliderBar.value / events.length) * 100;
 
-	logger("Computed percentage is " + percentage);
+	utils.logger("Computed percentage is " + percentage);
 	sliderBar.style.background = 'linear-gradient(to right, #82CFD0 0%, #82CFD0 ' + percentage + '%, #999999 ' + percentage + '%, #999999 100%)';
-	logger("onInput works, value is " + sliderBar.value);
-	logger("Extracted decimal is " + decimalValue);
+	utils.logger("onInput works, value is " + sliderBar.value);
+	utils.logger("Extracted decimal is " + decimalValue);
 	if (decimalValue == null) {
 		arrayValue = sliderBar.value;
 	}
 	else if (decimalValue >= 5 && Math.ceil(sliderBar.value) <= events.length) {
 		arrayValue = Math.ceil(sliderBar.value);
-		logger("Because value is >= 5, taking next frame, arrayValue is " + arrayValue);
+		utils.logger("Because value is >= 5, taking next frame, arrayValue is " + arrayValue);
 	} else {
 		arrayValue = Math.floor(sliderBar.value);
-		logger("Because value is < 5, taking previous frame, arrayValue is " + arrayValue);
+		utils.logger("Because value is < 5, taking previous frame, arrayValue is " + arrayValue);
 	}
 	textTime.innerHTML = computeTimeBetweenTwoFrames(events[arrayValue], events[0]) + " / " + totalTime;
 	pauseReplayer.pause(events[arrayValue].timestamp - events[0].timestamp);
@@ -270,7 +268,7 @@ function resumeRecord(){
 				events.push(event);
 			},
 		});
-		interval = setInterval(function () {logger(events);}, 1000);
+		interval = setInterval(function () {utils.logger(events);}, 1000);
 	}
 }
 
@@ -329,10 +327,10 @@ function launchRecord() {
 		recorderState = "RECORDING";
 		console.log("Recording has started! ");
 		navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(function(stream) {
-			logger("getUserMedia() success, stream created, initializing WebAudioRecorder...");
+			utils.logger("getUserMedia() success, stream created, initializing WebAudioRecorder...");
 			let audioContext = new AudioContext();
 			//update the format
-			logger("Format: 2 channel " + encodingType + " @ " + audioContext.sampleRate / 1000 + "kHz");
+			utils.logger("Format: 2 channel " + encodingType + " @ " + audioContext.sampleRate / 1000 + "kHz");
 			//assign to recStream for later use
 			recStream = stream;
 
@@ -345,16 +343,16 @@ function launchRecord() {
 					encoding: encodingType,
 					numChannel: 2,
 					onEncoderLoading: function(recorder, encodingType) {
-						logger("Loading " + encodingType + " encoder...");
+						utils.logger("Loading " + encodingType + " encoder...");
 					},
 					onEncoderLoaded: function(recorder, encodingType) {
-						logger(encodingType + " encoder loaded");
+						utils.logger(encodingType + " encoder loaded");
 					}
 				});
 
 				recorder.onComplete = function(recorder, blob) {
-					logger("Encoding complete");
-					logger(URL.createObjectURL(blob));
+					utils.logger("Encoding complete");
+					utils.logger(URL.createObjectURL(blob));
 					audioParts.push(blob);
                     // If the recorder has been fully stopped, print the downloadButton
 					if (recorderState == "STOPPED"){
@@ -379,7 +377,7 @@ function launchRecord() {
 						events.push(event);
 					},
 				});
-				interval = setInterval(function () {logger(events);}, 1000);
+				interval = setInterval(function () {utils.logger(events);}, 1000);
 
 				// Update the style of record button and the onclick function.
 				recordButton.style.backgroundColor = "white";
@@ -435,15 +433,15 @@ function stopRecord() {
 function displayDownButton() {
 	//avoid concatenating if there is only one element
 	if (audioParts.length > 1) {
-		logger("Loading ConcatenateBlobs");
+		utils.logger("Loading ConcatenateBlobs");
 		// We concatenate all audio parts.
 		loadJS("./lib/concatenate-blob/ConcatenateBlobs.js", function () {
 			ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
 				soundBlob = resultingBlob;
 			});
 				if (events.length > 2) {
-				changeMainDivSize(80, 0);
-				logger("I can download the page");
+				utils.changeMainDivSize(80, 0);
+				utils.logger("I can download the page");
 				downButton = new buttonClass.Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
 				downButton.createChildButton();
 				downButton.show();
@@ -451,11 +449,11 @@ function displayDownButton() {
 		});
 	}
 	else {
-		logger("No need to load ConcatenateBlobs");
+		utils.logger("No need to load ConcatenateBlobs");
 		soundBlob = audioParts[0];
 		if (events.length > 2) {
-			changeMainDivSize(80, 0);
-			logger("I can download the page");
+			utils.changeMainDivSize(80, 0);
+			utils.logger("I can download the page");
 			downButton = new buttonClass.Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
 			downButton.createChildButton();
 			downButton.show();
@@ -469,7 +467,7 @@ function displayDownButton() {
 function openMenu() {
 	if (isDragged == false) {
 		if (!isMenuOpen) {
-			changeMainDivSize(80, 0);
+			utils.changeMainDivSize(80, 0);
 			if (!isPauseButtonCreated) {
 				pauseButton = new buttonClass.Button(mainDiv, pauseRecord, "rrweb-pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
 				isPauseButtonCreated = true;
@@ -478,7 +476,7 @@ function openMenu() {
 			isMenuOpen = true;
 		} else {
 			pauseButton.hide();
-			changeMainDivSize(-80, 0);
+			utils.changeMainDivSize(-80, 0);
 			isMenuOpen = false;
 		}
 	}
@@ -534,6 +532,17 @@ function readTextFile(file)
 		return "error";
 }
 
+function addslashes(str) {
+    return str.replace(/\\/g, '\\\\').
+        replace(/\u0008/g, '\\b').
+        replace(/\t/g, '\\t').
+        replace(/\n/g, '\\n').
+        replace(/\f/g, '\\f').
+        replace(/\r/g, '\\r').
+        replace(/'/g, '\\\'').
+        replace(/"/g, '\\"').
+        replace(/\//g, '\\/');
+}
 
 /**
  * This function launch the download of the record
@@ -544,14 +553,17 @@ function downRecord() {
 		let zip = new JSZip();
 
 		textData = readTextFile("./download/download.html");
+        let textDataEnd = readTextFile("./download/download_end.html");
 		jsData = readTextFile("./download/js/index.js");
 		cssData = readTextFile("./download/js/style.css");
-		// We add thoses files to the zip archive
+		
+        // We add thoses files to the zip archive
 
-		//let addEventsToFile = "events JSON.parse(" + JSON.stringify(events) + "</script>"
+        console.log(addslashes(JSON.stringify(events)));
+		let addEventsToFile = "let events_string = \"" + addslashes(JSON.stringify(events)) + '";';
 
-		//textData += addEventsToFile + "</body></html>";
-		logger("Je mets les fichiers dans l'archive");
+		textData += addEventsToFile + textDataEnd;
+		utils.logger("Je mets les fichiers dans l'archive");
 		zip.file("download.html", textData);
 		zip.file("js/index.js", jsData);
 		zip.file("js/style.css", cssData);
@@ -592,7 +604,7 @@ function makeElementMovable(element) {
 	dragElement(element);
 
 	function dragElement(elmnt) {
-        logger("Make element draggable");
+        utils.logger("Make element draggable");
 		var pos1 = 0, pos2 = 0, mouseX = 0, mouseY = 0;
 		let isClick = true;
 		if (document.getElementById(elmnt.id + "header")) {
@@ -683,7 +695,7 @@ function loadCss(path) {
 	link.href = path;
 	link.media = 'all';
 	head.appendChild(link);
-    logger("Loaded Css !");
+    utils.logger("Loaded Css !");
 }
 
 /**
@@ -691,7 +703,7 @@ function loadCss(path) {
  * @function window.onload
  */
 window.onload = function() {
-    logger("Page has finished Loading, launching generic-rrweb-recorder");
+    utils.logger("Page has finished Loading, launching generic-rrweb-recorder");
 	// We create a mainDiv in which wi will display all menu element as block
 	mainDiv = createBaseDiv("rrweb-mainDivButton");
 
@@ -704,7 +716,7 @@ window.onload = function() {
 
 	buttonPosition(mainDiv);
 
-    logger("Main Button has been created");
+    utils.logger("Main Button has been created");
     
 	if (config.movable)
 		makeElementMovable(mainDiv);
