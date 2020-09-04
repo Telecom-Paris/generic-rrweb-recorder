@@ -554,8 +554,8 @@ function downRecord() {
 
 		textData = readTextFile("./download/download.html");
         let textDataEnd = readTextFile("./download/download_end.html");
-		jsData = readTextFile("./download/js/index.js");
-		cssData = readTextFile("./download/js/style.css");
+		jsData = readTextFile("./lib/rrweb/dist/rrweb.min.js");
+		cssData = readTextFile("./lib/rrweb/dist/rrweb.min.css");
 		
         // We add thoses files to the zip archive
 
@@ -565,8 +565,8 @@ function downRecord() {
 		textData += addEventsToFile + textDataEnd;
 		utils.logger("Je mets les fichiers dans l'archive");
 		zip.file("download.html", textData);
-		zip.file("js/index.js", jsData);
-		zip.file("js/style.css", cssData);
+		zip.file("js/rrweb.min.js", jsData);
+		zip.file("js/rrweb.min.css", cssData);
 		zip.file("data/events.json", eventBlob);
 		zip.file("data/sound.mp3", soundBlob);
 
