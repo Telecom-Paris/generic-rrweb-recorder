@@ -166,12 +166,27 @@ let arrayValue;
  * Default value: false
  * @type {boolean}
  */
-// let isUserComingBack = false;
 
+/**
+ * Recorder status. Can be "PLAYING", "PAUSED" or "STOPPED"
+ * Default value: null;
+ * @type {string}
+ */
 let recorderState = null;
 
+/**
+ * A flag to detect if encoding is finished.
+ * Avoid downloading archive before the audio recorder has finished
+ * Default value: false.
+ * @type {boolean}
+ */
 let encodingOver = false;
 
+/**
+ * The object of the gif button. This button is not clickable,
+ * it is just showing a running gif.
+ * @type {Object}
+ */
 let gifLoadingButton;
 
 /**
@@ -179,7 +194,6 @@ let gifLoadingButton;
  * @param {string} src The path of the script (can be relative or absolute)
  * @param {Function} cb Callback, function to launch when loaded
 */
-
 function loadJS(src, cb, ordered) {
 	"use strict";
 	var tmp;
@@ -208,38 +222,12 @@ function loadScripts() {
 		// We include Rrweb
 		loadJS("./lib/rrweb/dist/rrweb.min.js", function() {
 			loadJS("./lib/web-audio-recorder/lib/WebAudioRecorder.js", function() {
-			// Once script has been loaded, launch the rest of the code
+				// Once script has been loaded, launch the rest of the code
 				areRecordScriptsLoaded = true;
 				launchRecord();
 			});
 		});
 	}
-}
-
-/**
- * Compute the current time when the user is moving the range sliderBar
- */
-function computeTextTime() {
-	let decimalValue = (sliderBar.value + "").split(".")[1];
-	isUserComingBack = true;
-	let percentage = (sliderBar.value / events.length) * 100;
-
-	utils.logger("Computed percentage is " + percentage);
-	sliderBar.style.background = 'linear-gradient(to right, #82CFD0 0%, #82CFD0 ' + percentage + '%, #999999 ' + percentage + '%, #999999 100%)';
-	utils.logger("onInput works, value is " + sliderBar.value);
-	utils.logger("Extracted decimal is " + decimalValue);
-	if (decimalValue == null) {
-		arrayValue = sliderBar.value;
-	}
-	else if (decimalValue >= 5 && Math.ceil(sliderBar.value) <= events.length) {
-		arrayValue = Math.ceil(sliderBar.value);
-		utils.logger("Because value is >= 5, taking next frame, arrayValue is " + arrayValue);
-	} else {
-		arrayValue = Math.floor(sliderBar.value);
-		utils.logger("Because value is < 5, taking previous frame, arrayValue is " + arrayValue);
-	}
-	textTime.innerHTML = computeTimeBetweenTwoFrames(events[arrayValue], events[0]) + " / " + totalTime;
-	pauseReplayer.pause(events[arrayValue].timestamp - events[0].timestamp);
 }
 
 /**
@@ -252,13 +240,6 @@ function resumeRecord(){
 		recorderState = "RECORDING";
 		pauseButton.style.backgroundImage = "url('media/pause32.png')";
 		document.getElementById('rrweb-pauseRecord').onclick = pauseRecord;
-
-		if (isUserComingBack) {
-			console.log("I split from 0 to " + arrayValue);
-			events = events.slice(0, arrayValue);
-		}
-
-		document.getElementById('rrweb-sliderDiv').style.visibility = "hidden";
 
 		recorder.startRecording();
 
@@ -289,32 +270,10 @@ function pauseRecord() {
 
 		console.log("I set in pause");
 		if (events.length > 2) {
-			totalTime = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]);
-			if (!pauseReplayer) {
-				sliderDiv = createBaseDiv("rrweb-sliderDiv");
-				textTime = document.createElement("p");
-				sliderBar = document.createElement("input");
-				sliderBar.id = "rrweb-sliderBar";
-				sliderBar.type = "range";
-				sliderBar.min = "0";
-				sliderBar.step = "0.1";
-				pauseReplayer = new rrweb.Replayer(events, {root: document.body});
-				pauseReplayer.enableInteract();
-				sliderBar.oninput = computeTextTime;
-				sliderDiv.appendChild(textTime);
-				sliderDiv.appendChild(sliderBar);
-			} else {
-				document.getElementById('rrweb-sliderDiv').style.visibility = "visible";
-			}
-
 			// We stop audioRecorder
 			recorder.finishRecording();
 
-			textTime.innerHTML = totalTime + " / " + totalTime;
-			sliderBar.max = events.length;
-			sliderBar.value = events.length;
-			sliderBar.style.background = 'linear-gradient(to right, #82CFD0 0%, #82CFD0 100%, #999999 100%, #999999 100%)';
-			pauseReplayer.pause(events[events.length - 1].timestamp, events[0].timestamp);
+			//sliderBar.style.background = 'linear-gradient(to right, #82CFD0 0%, #82CFD0 100%, #999999 100%, #999999 100%)';
 		}
 	}
 }
@@ -513,8 +472,7 @@ function saveAs(data, filename)
 /** This function read a server-local text file
  *  (does not work in localhost due to CORS request not being HTTPS)
  */
-function readTextFile(file)
-{
+function readTextFile(file) {
 	var rawFile = new XMLHttpRequest();
 	var isFileValid = false;
 	rawFile.open("GET", file, false);
@@ -532,20 +490,27 @@ function readTextFile(file)
 		return "error";
 }
 
+/**
+ * This function escape all special character that could break JSON parsing
+ * This function is used when downloading record
+ * @param {string} str String given containing all the events.
+ * @return Return a well escaped string.
+ */
 function addslashes(str) {
-    return str.replace(/\\/g, '\\\\').
-        replace(/\u0008/g, '\\b').
-        replace(/\t/g, '\\t').
-        replace(/\n/g, '\\n').
-        replace(/\f/g, '\\f').
-        replace(/\r/g, '\\r').
-        replace(/'/g, '\\\'').
-        replace(/"/g, '\\"').
-        replace(/\//g, '\\/');
+	return str.replace(/\\/g, '\\\\').
+		replace(/\u0008/g, '\\b').
+		replace(/\t/g, '\\t').
+		replace(/\n/g, '\\n').
+		replace(/\f/g, '\\f').
+		replace(/\r/g, '\\r').
+		replace(/'/g, '\\\'').
+		replace(/"/g, '\\"').
+		replace(/\//g, '\\/');
 }
 
 /**
- * This function launch the download of the record
+ * This function launch the download of the record.
+ * It also put files in the zip for download
  */
 function downRecord() {
 	//Load Jszip (minified Because it load faster)
@@ -556,10 +521,9 @@ function downRecord() {
         let textDataEnd = readTextFile("./download/download_end.html");
 		jsData = readTextFile("./lib/rrweb/dist/rrweb.min.js");
 		cssData = readTextFile("./lib/rrweb/dist/rrweb.min.css");
-		
         // We add thoses files to the zip archive
 
-        console.log(addslashes(JSON.stringify(events)));
+		console.log(addslashes(JSON.stringify(events)));
 		let addEventsToFile = "let events_string = \"" + addslashes(JSON.stringify(events)) + '";';
 
 		textData += addEventsToFile + textDataEnd;
@@ -578,6 +542,10 @@ function downRecord() {
 	});
 }
 
+/**
+ * Set the button position according to user config
+ * @param {Object} button The object to apply the style to
+ */
 function buttonPosition(button) {
 	if (config.position.search("bottom") > -1)
 		button.style.bottom = "50";
@@ -695,7 +663,7 @@ function loadCss(path) {
 	link.href = path;
 	link.media = 'all';
 	head.appendChild(link);
-    utils.logger("Loaded Css !");
+	utils.logger("Loaded Css !");
 }
 
 /**
@@ -703,7 +671,7 @@ function loadCss(path) {
  * @function window.onload
  */
 window.onload = function() {
-    utils.logger("Page has finished Loading, launching generic-rrweb-recorder");
+	utils.logger("Page has finished Loading, launching generic-rrweb-recorder");
 	// We create a mainDiv in which wi will display all menu element as block
 	mainDiv = createBaseDiv("rrweb-mainDivButton");
 
@@ -716,8 +684,8 @@ window.onload = function() {
 
 	buttonPosition(mainDiv);
 
-    utils.logger("Main Button has been created");
-    
+	utils.logger("Main Button has been created");
+
 	if (config.movable)
 		makeElementMovable(mainDiv);
 }
