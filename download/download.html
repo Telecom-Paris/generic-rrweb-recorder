@@ -58,7 +58,12 @@
             }
 			
 			function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
-                return firstFrame.timestamp - secondFrame.timestamp;
+                // If first frame is undefined, meaning the firstframe does not exist.
+                // This is caused because events[value] > events.length
+                if (firstFrame == undefined)
+                    return events[events.length - 1].timestamp - secondFrame.timestamp;
+                else
+                    return firstFrame.timestamp - secondFrame.timestamp;
             }
 
 			function launchRrweb() {
@@ -145,7 +150,8 @@
 
                     document.getElementById('fullscreenButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z\"/></svg>";
                 } else if (fullscrenButtonStatus == "FULL") {
-                    //Set minified version
+
+                    //Set Small version
                     fullscrenButtonStatus = "SMALL";
                     
                     closeFullscreen();
@@ -166,7 +172,14 @@
 			}
 			
 			function clickPlayButton() {
-                if (playButtonStatus == "PAUSED") {
+                if (playButtonStatus == "PAUSED" || playButtonStatus == "FINISHED") {
+
+                    if (playButtonStatus == "FINISHED") {
+                        sliderbarValue = 0;
+                        document.getElementById('sliderBar').value = sliderbarValue;
+                        audio.currentTime = 0;
+                    }
+
                     playButtonStatus = "PLAYING";
                     
                     console.log("The replayer has started");
@@ -177,17 +190,23 @@
                     console.log(events.length + " / " + totalTimeInSec);
                     eventsPerSecond = events.length / totalTimeInSec;
                     
+                    replay.play(currentTime);
+                    audio.play();
+
                     interval = setInterval(function() {
                         if (sliderbarValue < events.length - 1) {
                             sliderbarValue += Math.floor(eventsPerSecond);
                             document.getElementById('sliderBar').value = sliderbarValue;
-                            console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
+                            console.log("value is now " + sliderbarValue + " / " + events.length);
                             document.getElementById('textTimer').innerHTML = convertTextTimer(computeTimeBetweenTwoFrames(events[sliderbarValue], events[0])) + " / " + totalTime;
+                        } else {
+                            playButtonStatus = "FINISHED";
+                            document.getElementById('playButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M8 5v14l11-7z\"/></svg>";
+                            clearInterval(interval);
                         }
                     },1000);
                     
-                    replay.play(currentTime);
-                    audio.play();
+                    
                 } else if (playButtonStatus == "PLAYING") {
                     playButtonStatus = "PAUSED";
                     
