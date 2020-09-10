@@ -397,14 +397,16 @@ function displayDownButton() {
 		loadJS("./lib/concatenate-blob/ConcatenateBlobs.js", function () {
 			ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
 				soundBlob = resultingBlob;
-			});
+				console.log(audioParts);
 				if (events.length > 2) {
-				utils.changeMainDivSize(80, 0);
-				utils.logger("I can download the page");
-				downButton = new buttonClass.Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
-				downButton.createChildButton();
-				downButton.show();
-			}
+					utils.changeMainDivSize(80, 0);
+					utils.logger("I can download the page");
+					downButton = new buttonClass.Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
+					downButton.createChildButton();
+					downButton.show();
+				}
+			});
+			
 		});
 	}
 	else {
