@@ -19,6 +19,12 @@ See [here](#the-minified-version) for mor info about the minified version.
 
 The script takes care of the rest.
 
+If you decide not to start the script when page is loaded, you can launch it doing this:
+```
+new Recorder();
+```
+in a script tag
+
 ### Customize it as you want:
 
 The script has a basic configuration, but here is what you can customize:

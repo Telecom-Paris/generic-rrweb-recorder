@@ -1,7 +1,3 @@
-export {config, mainDiv};
-import * as buttonClass from './buttonClass.js';
-import * as utils from './utils.js';
-
 /**
  * This is the default configuration variable
  * @type {Object}
@@ -33,6 +29,8 @@ let isMenuOpen = false;
  * @type {Object}
  */
 let mainDiv;
+let mainDivWidth = 70;
+let mainDivHeight = 70;
 
 /**
  * Record Button Object
@@ -217,6 +215,51 @@ function loadJS(src, cb, ordered) {
 	return script;
 }
 
+/**
+ * Turn milliseconds to minutes and seconds in the following format:
+ * '00:00'
+ * @param {integer} millis number of millis to convert
+ */
+function millisToMinutesAndSeconds(millis) {
+	var minutes = Math.floor(millis / 60000);
+	var seconds = ((millis % 60000) / 1000).toFixed(0);
+	return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+}
+  
+/**
+ * Compute time in minute and second between two rrweb events.
+ * Compute doing firstFrame - secondFrame
+ * @param {rrweb-event} firstFrame The first frame
+ * @param {rrweb-event} secondFrame The second frame
+ * @returns {string} String in the format "00:00"
+ */
+ function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
+  logger("Recording time is event[last] - event[0] = " + (firstFrame.timestamp - secondFrame.timestamp));
+  logger("Aka " + millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp) + " mn and secs");
+  return millisToMinutesAndSeconds(firstFrame.timestamp - secondFrame.timestamp);
+}
+  
+/**
+ * Change the size of the mainDiv
+ * @param {integer} newWidthInPx The will that will be added to the current width
+ * @param {integer} newHeightInPx The new height that will be added to the current height
+ */
+function changeMainDivSize(newWidthInPx, newHeightInPx) {
+ mainDivWidth += newWidthInPx;
+ mainDivHeight += newHeightInPx;
+ mainDiv.style.width = mainDivWidth + "px";
+ mainDiv.style.height = mainDivHeight + "px";
+}
+  
+/**
+ * Check if log has been activated and print stringLog if so.
+ * @param {string} String to print if log is activated.
+ */
+function logger(stringLog){
+	if (config.debug)
+		console.log("generic-rrweb-recorder: " + stringLog);
+}
+  
 function loadScripts() {
 	// We make sure this is not a drag, but a click
 	if (!isDragged) {
@@ -250,7 +293,7 @@ function resumeRecord(){
 				events.push(event);
 			},
 		});
-		interval = setInterval(function () {utils.logger(events);}, 1000);
+		interval = setInterval(function () {logger(events);}, 1000);
 	}
 }
 
@@ -287,10 +330,10 @@ function launchRecord() {
 		recorderState = "RECORDING";
 		console.log("Recording has started! ");
 		navigator.mediaDevices.getUserMedia({audio: true, video: false}).then(function(stream) {
-			utils.logger("getUserMedia() success, stream created, initializing WebAudioRecorder...");
+			logger("getUserMedia() success, stream created, initializing WebAudioRecorder...");
 			let audioContext = new AudioContext();
 			//update the format
-			utils.logger("Format: 2 channel " + encodingType + " @ " + audioContext.sampleRate / 1000 + "kHz");
+			logger("Format: 2 channel " + encodingType + " @ " + audioContext.sampleRate / 1000 + "kHz");
 			//assign to recStream for later use
 			recStream = stream;
 
@@ -303,16 +346,16 @@ function launchRecord() {
 					encoding: encodingType,
 					numChannel: 2,
 					onEncoderLoading: function(recorder, encodingType) {
-						utils.logger("Loading " + encodingType + " encoder...");
+						logger("Loading " + encodingType + " encoder...");
 					},
 					onEncoderLoaded: function(recorder, encodingType) {
-						utils.logger(encodingType + " encoder loaded");
+						logger(encodingType + " encoder loaded");
 					}
 				});
 
 				recorder.onComplete = function(recorder, blob) {
-					utils.logger("Encoding complete");
-					utils.logger(URL.createObjectURL(blob));
+					logger("Encoding complete");
+					logger(URL.createObjectURL(blob));
 					audioParts.push(blob);
                     // If the recorder has been fully stopped, print the downloadButton
 					if (recorderState == "STOPPED"){
@@ -337,7 +380,7 @@ function launchRecord() {
 						events.push(event);
 					},
 				});
-				interval = setInterval(function () {utils.logger(events);}, 1000);
+				interval = setInterval(function () {logger(events);}, 1000);
 
 				// Update the style of record button and the onclick function.
 				recordButton.style.backgroundColor = "white";
@@ -382,7 +425,7 @@ function stopRecord() {
 
 		if (encodingOver == false) {
 			//Display GIF loading
-			gifLoadingButton = new buttonClass.Button(mainDiv, null, "rrweb-loadingDown", "Your download is almost ready !", 'media/loading32.gif', recordButton);
+			gifLoadingButton = new Button(mainDiv, null, "rrweb-loadingDown", "Your download is almost ready !", 'media/loading32.gif', recordButton);
 			gifLoadingButton.createChildButton();
 			gifLoadingButton.setClickable(false);
 			gifLoadingButton.show();
@@ -393,16 +436,16 @@ function stopRecord() {
 function displayDownButton() {
 	//avoid concatenating if there is only one element
 	if (audioParts.length > 1) {
-		utils.logger("Loading ConcatenateBlobs");
+		logger("Loading ConcatenateBlobs");
 		// We concatenate all audio parts.
 		loadJS("./lib/concatenate-blob/ConcatenateBlobs.js", function () {
 			ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
 				soundBlob = resultingBlob;
 				console.log(audioParts);
 				if (events.length > 2) {
-					utils.changeMainDivSize(80, 0);
-					utils.logger("I can download the page");
-					downButton = new buttonClass.Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
+					changeMainDivSize(80, 0);
+					logger("I can download the page");
+					downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
 					downButton.createChildButton();
 					downButton.show();
 				}
@@ -411,12 +454,12 @@ function displayDownButton() {
 		});
 	}
 	else {
-		utils.logger("No need to load ConcatenateBlobs");
+		logger("No need to load ConcatenateBlobs");
 		soundBlob = audioParts[0];
 		if (events.length > 2) {
-			utils.changeMainDivSize(80, 0);
-			utils.logger("I can download the page");
-			downButton = new buttonClass.Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
+			changeMainDivSize(80, 0);
+			logger("I can download the page");
+			downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
 			downButton.createChildButton();
 			downButton.show();
 		}
@@ -429,16 +472,16 @@ function displayDownButton() {
 function openMenu() {
 	if (isDragged == false) {
 		if (!isMenuOpen) {
-			utils.changeMainDivSize(80, 0);
+			changeMainDivSize(80, 0);
 			if (!isPauseButtonCreated) {
-				pauseButton = new buttonClass.Button(mainDiv, pauseRecord, "rrweb-pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
+				pauseButton = new Button(mainDiv, pauseRecord, "rrweb-pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
 				isPauseButtonCreated = true;
 				pauseButton.createChildButton();
 			} else { pauseButton.show(); }
 			isMenuOpen = true;
 		} else {
 			pauseButton.hide();
-			utils.changeMainDivSize(-80, 0);
+			changeMainDivSize(-80, 0);
 			isMenuOpen = false;
 		}
 	}
@@ -530,7 +573,7 @@ function downRecord() {
 		let addEventsToFile = "let events_string = \"" + addslashes(JSON.stringify(events)) + '";';
 
 		textData += addEventsToFile + textDataEnd;
-		utils.logger("Je mets les fichiers dans l'archive");
+		logger("Je mets les fichiers dans l'archive");
 		zip.file("download.html", textData);
 		zip.file("js/rrweb.min.js", jsData);
 		zip.file("js/rrweb.min.css", cssData);
@@ -575,7 +618,7 @@ function makeElementMovable(element) {
 	dragElement(element);
 
 	function dragElement(elmnt) {
-        utils.logger("Make element draggable");
+        logger("Make element draggable");
 		var pos1 = 0, pos2 = 0, mouseX = 0, mouseY = 0;
 		let isClick = true;
 		if (document.getElementById(elmnt.id + "header")) {
@@ -666,32 +709,124 @@ function loadCss(path) {
 	link.href = path;
 	link.media = 'all';
 	head.appendChild(link);
-	utils.logger("Loaded Css !");
+	logger("Loaded Css !");
 }
 
 /**
  * Create base elements for replay.
  * Very useful if you need to manually launch the recorder.
  */
-function createBaseElements() {
-	utils.logger("Page has finished Loading, launching generic-rrweb-recorder");
-	// We create a mainDiv in which wi will display all menu element as block
-	mainDiv = createBaseDiv("rrweb-mainDivButton");
+class Recorder {
+	constructor() {
+		logger("Page has finished Loading, launching generic-rrweb-recorder");
+		// We create a mainDiv in which wi will display all menu element as block
+		mainDiv = createBaseDiv("rrweb-mainDivButton");
 
-	// We load CSS
-	loadCss("media/style.css");
+		// We load CSS
+		loadCss("media/style.css");
 
-	// We define a button that will launch recording
-	recordButton = new buttonClass.Button(mainDiv, loadScripts, "rrweb-recordButton", "Start recording! ", 'media/camera32.png', null);
-	recordButton.createMenuButton();
+		// We define a button that will launch recording
+		recordButton = new Button(mainDiv, loadScripts, "rrweb-recordButton", "Start recording! ", 'media/camera32.png', null);
+		recordButton.createMenuButton();
 
-	buttonPosition(mainDiv);
+		buttonPosition(mainDiv);
 
-	utils.logger("Main Button has been created");
+		logger("Main Button has been created");
 
-	if (config.movable)
-		makeElementMovable(mainDiv);
+		if (config.movable)
+			makeElementMovable(mainDiv);
+	}
 }
+
+/**
+ * Create a new Button
+ * @class
+ *
+ * @param {Object} parentElem The parent Node. The button will be append to this
+ * node
+ *
+ * @param {Function} func On click on the button, this function will be
+ * triggered
+ *
+ * @param {string} id The id of the button
+ *
+ * @param {string} text The name of the button (displayed when the mouse is over
+ * the button)
+ *
+ * @param {string} icon The path of the image displayed in the button
+ *
+ * @param {Button} rightOf The button will be dispplayed to right of this
+ * element
+ */
+class Button {
+	constructor(parentElem, func, id, text, icon, rightOf) {
+		this.parentElem = parentElem;
+		this.func = func;
+		this.id = id;
+		this.text = text;
+		this.icon = "url(" + icon + ")";
+		this.width = rightOf != null ? rightOf.getWidth() + 80 : 0;
+	}
+
+	setClickable(isClickable) {
+        this.button.disabled = isClickable;
+    }
+	
+	/**
+	 * Return width of the button
+	 */
+	getWidth() { return this.width; }
+
+	/**
+	 * Set the button to visible
+	 */
+	show() { this.button.style.visibility = "visible"; }
+
+	/**
+	 * Hide the button
+	 */
+	hide() { this.button.style.visibility = "hidden"; }
+
+	/**
+	 * Set all element for a basic button
+	 */
+	createBasicButton() {
+		this.button = document.createElement("input");
+		this.button.type = "button";
+		this.button.onclick = this.func;
+		this.button.id = this.id;
+		this.button.style.backgroundImage = this.icon;
+		this.button.title = this.text;
+		this.style = this.button.style;
+	}
+
+	/**
+	 * Create main Button (recording button).
+	 * Call {@link Button#createBasicButton createBasicButton}.
+	 */
+	createMenuButton() {
+		this.createBasicButton();
+		this.button.classList.add("rrweb-Buttons");
+		if (config.recordButtonColor)
+			this.button.style.backgroundColor = config.recordButtonColor;
+		this.parentElem.appendChild(this.button);
+	}
+
+	/**
+	 * Create others button that are not mainButton.
+	 * Call {@link Button#createBasicButton createBasicButton}.
+	 */
+	createChildButton() {
+		this.createBasicButton();
+		if (config.recordPauseColor)
+			this.button.style.backgroundColor = config.pauseButtonColor;
+		this.button.classList.add("rrweb-Buttons");
+		this.button.classList.add("rrweb-ChildButton")
+		this.button.style.left = this.width + "px";
+		this.parentElem.appendChild(this.button);
+	}
+}
+
 
 /**
  * When the page has finished Loading
@@ -699,6 +834,6 @@ function createBaseElements() {
  */
 window.onload = function() {
 	if (config.startOnload) {
-		createBaseElements();
+		new Recorder();
 	}
 }
