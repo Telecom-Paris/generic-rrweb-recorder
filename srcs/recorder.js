@@ -7,6 +7,7 @@ import * as utils from './utils.js';
  * @type {Object}
 */
 let config = {
+	startOnload: true,
 	position: "bottom-right",
 	movable: true,
 	debug: true,
@@ -669,10 +670,10 @@ function loadCss(path) {
 }
 
 /**
- * When the page has finished Loading
- * @function window.onload
+ * Create base elements for replay.
+ * Very useful if you need to manually launch the recorder.
  */
-window.onload = function() {
+function createBaseElements() {
 	utils.logger("Page has finished Loading, launching generic-rrweb-recorder");
 	// We create a mainDiv in which wi will display all menu element as block
 	mainDiv = createBaseDiv("rrweb-mainDivButton");
@@ -690,4 +691,14 @@ window.onload = function() {
 
 	if (config.movable)
 		makeElementMovable(mainDiv);
+}
+
+/**
+ * When the page has finished Loading
+ * @function window.onload
+ */
+window.onload = function() {
+	if (config.startOnload) {
+		createBaseElements();
+	}
 }

@@ -22,6 +22,7 @@ The script takes care of the rest.
 ### Customize it as you want:
 
 The script has a basic configuration, but here is what you can customize:
+- if script is lauching when page is loaded (default is **true**)
 - position (default is **"bottom-right"**)
   list of avaibalble position:
   - bottom
