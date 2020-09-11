@@ -20,6 +20,33 @@
             .divButton { float: left;}
 
             .slider::-moz-range-thumb {cursor: pointer;}
+
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+
+            .speed-dropdown-content {
+                display: none;
+                position: absolute;
+                background-color: #f1f1f1;
+                min-width: 160px;
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 1;
+            }
+
+            .speed-dropdown-content a {
+                color: black;
+                padding: 12px 16px;
+                text-decoration: none;
+                display: block;
+            }
+
+            .speed-dropdown-content a:hover {background-color: #ddd;}
+
+#speedMenu:hover .speed-dropdown-content {display: block;}
+
+#speedMenu:hover #speedIcon {background-color: #3e8e41;}
 		</style>
 		<script src="./js/rrweb.min.js"></script>
 		<script>
@@ -58,12 +85,7 @@
             }
 			
 			function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
-                // If first frame is undefined, meaning the firstframe does not exist.
-                // This is caused because events[value] > events.length
-                if (firstFrame == undefined)
-                    return events[events.length - 1].timestamp - secondFrame.timestamp;
-                else
-                    return firstFrame.timestamp - secondFrame.timestamp;
+                return firstFrame.timestamp - secondFrame.timestamp;
             }
 
 			function launchRrweb() {
@@ -71,7 +93,7 @@
 				console.log("je lance RRweb");
 
 				// Creating new replayer Object
-				replay = new rrweb.Replayer(events, {root: document.getElementById('replayDiv'), mouseTail: false});
+				replay = new rrweb.Replayer(events, {root: document.getElementById('replayDiv')});
 
 				// Enable interaction with user
                 replay.enableInteract();
@@ -150,8 +172,7 @@
 
                     document.getElementById('fullscreenButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z\"/></svg>";
                 } else if (fullscrenButtonStatus == "FULL") {
-
-                    //Set Small version
+                    //Set minified version
                     fullscrenButtonStatus = "SMALL";
                     
                     closeFullscreen();
@@ -170,16 +191,19 @@
                 else
                     currentTime = 0;
 			}
-			
+            
+            function setSpeed(newSpeed) {
+                console.log("Set the speed to " + newSpeed);
+                if (playButtonStatus == "PLAYING")
+                    replay.pause();
+                replay.setConfig({speed: newSpeed});
+                if (playButtonStatus == "PLAYING")
+                    replay.play();
+                audio.playbackRate = newSpeed;
+            }
+
 			function clickPlayButton() {
-                if (playButtonStatus == "PAUSED" || playButtonStatus == "FINISHED") {
-
-                    if (playButtonStatus == "FINISHED") {
-                        sliderbarValue = 0;
-                        document.getElementById('sliderBar').value = sliderbarValue;
-                        audio.currentTime = 0;
-                    }
-
+                if (playButtonStatus == "PAUSED") {
                     playButtonStatus = "PLAYING";
                     
                     console.log("The replayer has started");
@@ -190,23 +214,17 @@
                     console.log(events.length + " / " + totalTimeInSec);
                     eventsPerSecond = events.length / totalTimeInSec;
                     
-                    replay.play(currentTime);
-                    audio.play();
-
                     interval = setInterval(function() {
                         if (sliderbarValue < events.length - 1) {
                             sliderbarValue += Math.floor(eventsPerSecond);
                             document.getElementById('sliderBar').value = sliderbarValue;
-                            console.log("value is now " + sliderbarValue + " / " + events.length);
+                            console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
                             document.getElementById('textTimer').innerHTML = convertTextTimer(computeTimeBetweenTwoFrames(events[sliderbarValue], events[0])) + " / " + totalTime;
-                        } else {
-                            playButtonStatus = "FINISHED";
-                            document.getElementById('playButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M8 5v14l11-7z\"/></svg>";
-                            clearInterval(interval);
                         }
                     },1000);
                     
-                    
+                    replay.play(currentTime);
+                    audio.play();
                 } else if (playButtonStatus == "PLAYING") {
                     playButtonStatus = "PAUSED";
                     
