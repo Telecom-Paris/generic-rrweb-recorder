@@ -44,9 +44,9 @@
 
             .speed-dropdown-content a:hover {background-color: #ddd;}
 
-#speedMenu:hover .speed-dropdown-content {display: block;}
+            #speedMenu:hover .speed-dropdown-content {display: block;}
 
-#speedMenu:hover #speedIcon {background-color: #3e8e41;}
+            #speedMenu:hover #speedIcon {background-color: #3e8e41;}
 		</style>
 		<script src="./js/rrweb.min.js"></script>
 		<script>
@@ -194,11 +194,14 @@
             
             function setSpeed(newSpeed) {
                 console.log("Set the speed to " + newSpeed);
-                if (playButtonStatus == "PLAYING")
+                
+                if (playButtonStatus == "PLAYING") {
+                    currentTime = replay.getCurrentTime();    
                     replay.pause();
+                }
                 replay.setConfig({speed: newSpeed});
                 if (playButtonStatus == "PLAYING")
-                    replay.play();
+                    replay.play(currentTime);
                 audio.playbackRate = newSpeed;
             }
 
