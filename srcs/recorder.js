@@ -3,6 +3,8 @@
  * @type {Object}
 */
 let config = {
+	// The slash at the end is important
+	libPath: "./generic-rrweb-recorder/",
 	startOnload: true,
 	position: "bottom-right",
 	movable: true,
@@ -264,8 +266,8 @@ function loadScripts() {
 	// We make sure this is not a drag, but a click
 	if (!isDragged) {
 		// We include Rrweb
-		loadJS("./lib/rrweb/dist/rrweb.min.js", function() {
-			loadJS("./lib/web-audio-recorder/lib/WebAudioRecorder.js", function() {
+		loadJS(getRightLibPath("lib/rrweb/dist/rrweb.min.js", false), function() {
+			loadJS(getRightLibPath("lib/web-audio-recorder/lib/WebAudioRecorder.js", false), function() {
 				// Once script has been loaded, launch the rest of the code
 				areRecordScriptsLoaded = true;
 				launchRecord();
@@ -282,7 +284,7 @@ function loadScripts() {
 function resumeRecord(){
 	if (!isDragged) {
 		recorderState = "RECORDING";
-		pauseButton.style.backgroundImage = "url('media/pause32.png')";
+		pauseButton.style.backgroundImage = getRightLibPath('media/pause32.png', true);
 		document.getElementById('rrweb-pauseRecord').onclick = pauseRecord;
 
 		recorder.startRecording();
@@ -309,7 +311,7 @@ function pauseRecord() {
 			isActive();
 		clearInterval(interval);
 
-		pauseButton.style.backgroundImage = "url('media/resume32.png')";
+		pauseButton.style.backgroundImage = getRightLibPath('media/resume32.png', true);
 		document.getElementById('rrweb-pauseRecord').onclick = resumeRecord;
 
 		console.log("I set in pause");
@@ -342,7 +344,7 @@ function launchRecord() {
 
 			if (areRecordScriptsLoaded) {
 				recorder = new WebAudioRecorder(input, {
-					workerDir: "./lib/web-audio-recorder/lib/",
+					workerDir: config.libPath + "lib/web-audio-recorder/lib/",
 					encoding: encodingType,
 					numChannel: 2,
 					onEncoderLoading: function(recorder, encodingType) {
@@ -384,7 +386,7 @@ function launchRecord() {
 
 				// Update the style of record button and the onclick function.
 				recordButton.style.backgroundColor = "white";
-				recordButton.style.backgroundImage = "url('media/recording32.png')";
+				recordButton.style.backgroundImage = getRightLibPath('media/recording32.png', true);
 				recordButton.style.border = "1px solid black";
 				document.getElementById('rrweb-recordButton').onclick = stopRecord;
 
@@ -403,7 +405,7 @@ function stopRecord() {
 	if (!isDragged) {
 		recorderState = "STOPPED";
 		recordButton.style.backgroundColor = "#d92027";
-		recordButton.style.backgroundImage = "url('media/camera32.png')";
+		recordButton.style.backgroundImage = getRightLibPath('media/camera32.png', true);
 		recordButton.style.border = "none";
 		document.getElementById('rrweb-recordButton').onclick = launchRecord;
 
@@ -433,12 +435,17 @@ function stopRecord() {
 	}
 }
 
+function getRightLibPath(path, isURL) {
+	if (isURL) return "url(" + config.libPath + path + ")";
+	else return config.libPath + path;
+}
+
 function displayDownButton() {
 	//avoid concatenating if there is only one element
 	if (audioParts.length > 1) {
 		logger("Loading ConcatenateBlobs");
 		// We concatenate all audio parts.
-		loadJS("./lib/concatenate-blob/ConcatenateBlobs.js", function () {
+		loadJS(config.libPath + "lib/concatenate-blob/ConcatenateBlobs.js", function () {
 			ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
 				soundBlob = resultingBlob;
 				console.log(audioParts);
@@ -723,10 +730,10 @@ class Recorder {
 		mainDiv = createBaseDiv("rrweb-mainDivButton");
 
 		// We load CSS
-		loadCss("media/style.css");
+		loadCss(getRightLibPath("media/style.css", false));
 
 		// We define a button that will launch recording
-		recordButton = new Button(mainDiv, loadScripts, "rrweb-recordButton", "Start recording! ", 'media/camera32.png', null);
+		recordButton = new Button(mainDiv, loadScripts, "rrweb-recordButton", "Start recording! ",'media/camera32.png', null);
 		recordButton.createMenuButton();
 
 		buttonPosition(mainDiv);
@@ -764,7 +771,7 @@ class Button {
 		this.func = func;
 		this.id = id;
 		this.text = text;
-		this.icon = "url(" + icon + ")";
+		this.icon = getRightLibPath(icon, true);
 		this.width = rightOf != null ? rightOf.getWidth() + 80 : 0;
 	}
 
@@ -826,7 +833,6 @@ class Button {
 		this.parentElem.appendChild(this.button);
 	}
 }
-
 
 /**
  * When the page has finished Loading
