@@ -7,13 +7,13 @@ Just include a line in the header of your website :
 (or at the bottom of your body if you want your website to load faster)
 
 ```
-<script type="text/javascript" type="module" src="path/to/recorder.js"></script>
+<script type="text/javascript" src="path/to/recorder.js"></script>
 ```
 
 If you are looking for the minified version, it can be found under [min](min/) folder.
 To include the minified version, you can do:
 ```
-<script type="text/javascript" type="module" src="path/to/recorder.min.js"></script>
+<script type="text/javascript" src="path/to/recorder.min.js"></script>
 ```
 See [here](#the-minified-version) for mor info about the minified version.
 
@@ -28,6 +28,7 @@ in a script tag
 ### Customize it as you want:
 
 The script has a basic configuration, but here is what you can customize:
+- Path to the script folder /!\ should end with a ```/``` /!\ (default is **generic-rrweb-recorder**)
 - if script is lauching when page is loaded (default is **true**)
 - position (default is **"bottom-right"**)
   list of avaibalble position:

@@ -196,7 +196,6 @@ let gifLoadingButton;
  * @param {Function} cb Callback, function to launch when loaded
 */
 function loadJS(src, cb, ordered) {
-	"use strict";
 	var tmp;
 	var ref = document.getElementsByTagName("script")[0];
 	var script = document.createElement("script");
@@ -212,9 +211,14 @@ function loadJS(src, cb, ordered) {
 	ref.parentNode.insertBefore(script, ref);
 
 	if (cb && typeof(cb) === "function") {
+		script.onerror = onScriptLoadFail(script.src);
 		script.onload = cb;
 	}
 	return script;
+}
+
+function onScriptLoadFail(scriptSrc) {
+	alert("The script at this address: " + scriptSrc + " failed to load. Please check your internet connection or if the script exist");
 }
 
 /**
