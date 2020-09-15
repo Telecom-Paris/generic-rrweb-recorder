@@ -4,11 +4,12 @@
 */
 let config = {
 	// The slash at the end is important
-	libPath: "./generic-rrweb-recorder/",
+	libPath: "./",
 	startOnload: true,
 	position: "bottom-right",
 	movable: true,
 	debug: true,
+	// color is a string
 	recordButtonColor: null,
 	pauseButtonColor: null
 };
@@ -31,8 +32,7 @@ let isMenuOpen = false;
  * @type {Object}
  */
 let mainDiv;
-let mainDivWidth = 70;
-let mainDivHeight = 70;
+let mainDivSize = {width: 70, height: 70};
 
 /**
  * Record Button Object
@@ -49,6 +49,17 @@ let pauseButton;
  * @type {Button}
  */
 let downButton;
+/**
+ * The object of the gif button. This button is not clickable,
+ * it is just showing a running gif.
+ * @type {Object}
+ */
+let gifLoadingButton;
+/**
+ * Post Edition Button Object
+ * @type {Button}
+ */
+let postEdButton;
 /**
  * Check if pause Button has been created
  * Default value: false
@@ -96,7 +107,7 @@ let recorder;
  */
 let recStream;
 /**
- * encoding type is format encoding for sound.
+ * encoding type is format encoding for sound. Can be mp3 or ogg
  * Default value: "mp3";
  * @type {string}
  */
@@ -120,11 +131,6 @@ let eventBlob;
  */
 let soundBlob;
 /**
- * The replay page text when downloading
- * @type {string}
- */
-let textData;
-/**
  * The js script in the replay page (for download)
  * @type {string}
  */
@@ -136,39 +142,6 @@ let jsData;
 let cssData;
 
 /**
- * Time of the record.
- * Used when the range bar is displayed
- * @type {string}
- */
-let totalTime;
-/**
- * Sliderbar range bar Object
- * @type {Object}
- */
-let sliderBar;
-/**
- * Range bar text indicator
- * @type {Object}
- */
-let textTime;
-/**
- * Replayer created during pause, to be able to recreate frames in real time
- * Default value: null
- * @type {Object}
- */
-let pauseReplayer = null;
-/**
- * Frame selected each time the user use the range bar
- * @type {integer}
- */
-let arrayValue;
-/**
- * Check if the user came back in the timeline of events.
- * Default value: false
- * @type {boolean}
- */
-
-/**
  * Recorder status. Can be "PLAYING", "PAUSED" or "STOPPED"
  * Default value: null;
  * @type {string}
@@ -177,18 +150,17 @@ let recorderState = null;
 
 /**
  * A flag to detect if encoding is finished.
- * Avoid downloading archive before the audio recorder has finished
+ * Avoid downloading archive before the audio encoder has finished
  * Default value: false.
  * @type {boolean}
  */
-let encodingOver = false;
+let isEncodingOver = false;
 
 /**
- * The object of the gif button. This button is not clickable,
- * it is just showing a running gif.
- * @type {Object}
+ * Save the last element created (the most right)
+ * @type {Button}
  */
-let gifLoadingButton;
+let lastButton;
 
 /**
  * Load different JS library and callback when fully loaded
@@ -211,7 +183,7 @@ function loadJS(src, cb, ordered) {
 	ref.parentNode.insertBefore(script, ref);
 
 	if (cb && typeof(cb) === "function") {
-		script.onerror = onScriptLoadFail(script.src);
+		//script.onerror = onScriptLoadFail(script.src);
 		script.onload = cb;
 	}
 	return script;
@@ -251,10 +223,10 @@ function millisToMinutesAndSeconds(millis) {
  * @param {integer} newHeightInPx The new height that will be added to the current height
  */
 function changeMainDivSize(newWidthInPx, newHeightInPx) {
- mainDivWidth += newWidthInPx;
- mainDivHeight += newHeightInPx;
- mainDiv.style.width = mainDivWidth + "px";
- mainDiv.style.height = mainDivHeight + "px";
+	mainDivSize.width += newWidthInPx;
+ 	mainDivSize.height += newHeightInPx;
+ 	mainDiv.style.width = mainDivSize.width + "px";
+ 	mainDiv.style.height = mainDivSize.height + "px";
 }
   
 /**
@@ -328,6 +300,21 @@ function pauseRecord() {
 	}
 }
 
+function postEdit() {
+	logger("Launching the post edit...");
+}
+
+function displayPostEditButton() {
+	//avoid concatenating if there is only one element
+	if (events.length > 2) {
+		changeMainDivSize(80, 0);
+		logger("I can download the page");
+		postEdButton = new Button(mainDiv, postEdit, "rrweb-postEdit", "Edit your record", 'media/edit32.png', recordButton);
+		postEdButton.createChildButton();
+		postEdButton.show();
+	}
+}
+
 /**
  * Launch the audio and screen record
  */
@@ -365,8 +352,9 @@ function launchRecord() {
 					audioParts.push(blob);
                     // If the recorder has been fully stopped, print the downloadButton
 					if (recorderState == "STOPPED"){
-						encodingOver = true;
+						isEncodingOver = true;
 						gifLoadingButton.hide();
+						displayPostEditButton();
 						displayDownButton();
 					}
 				}
@@ -386,7 +374,7 @@ function launchRecord() {
 						events.push(event);
 					},
 				});
-				interval = setInterval(function () {logger(events);}, 1000);
+				interval = setInterval(function () {logger("Length of events " + events.length);}, 1000);
 
 				// Update the style of record button and the onclick function.
 				recordButton.style.backgroundColor = "white";
@@ -429,7 +417,7 @@ function stopRecord() {
 		// Set the event as Blob
 		eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
 
-		if (encodingOver == false) {
+		if (isEncodingOver == false) {
 			//Display GIF loading
 			gifLoadingButton = new Button(mainDiv, null, "rrweb-loadingDown", "Your download is almost ready !", 'media/loading32.gif', recordButton);
 			gifLoadingButton.createChildButton();
@@ -456,7 +444,7 @@ function displayDownButton() {
 				if (events.length > 2) {
 					changeMainDivSize(80, 0);
 					logger("I can download the page");
-					downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
+					downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', postEdButton);
 					downButton.createChildButton();
 					downButton.show();
 				}
@@ -470,7 +458,7 @@ function displayDownButton() {
 		if (events.length > 2) {
 			changeMainDivSize(80, 0);
 			logger("I can download the page");
-			downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', recordButton);
+			downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', postEdButton);
 			downButton.createChildButton();
 			downButton.show();
 		}
@@ -528,6 +516,7 @@ function saveAs(data, filename)
 
 /** This function read a server-local text file
  *  (does not work in localhost due to CORS request not being HTTPS)
+ *  @param {String} file path to read file
  */
 function readTextFile(file) {
 	var rawFile = new XMLHttpRequest();
@@ -574,7 +563,7 @@ function downRecord() {
 	loadJS("./lib/jszip/dist/jszip.js", function() {
 		let zip = new JSZip();
 
-		textData = readTextFile("./download/download.html");
+		let textData = readTextFile("./download/download.html");
         let textDataEnd = readTextFile("./download/download_end.html");
 		jsData = readTextFile("./lib/rrweb/dist/rrweb.min.js");
 		cssData = readTextFile("./lib/rrweb/dist/rrweb.min.css");
@@ -584,8 +573,7 @@ function downRecord() {
 		let addEventsToFile = "let events_string = \"" + addslashes(JSON.stringify(events)) + '";';
 
 		textData += addEventsToFile + textDataEnd;
-		logger("Je mets les fichiers dans l'archive");
-		zip.file("download.html", textData);
+		zip.file("index.html", textData);
 		zip.file("js/rrweb.min.js", jsData);
 		zip.file("js/rrweb.min.css", cssData);
 		zip.file("data/events.json", eventBlob);
@@ -616,6 +604,9 @@ function buttonPosition(button) {
 		button.style.left = "50";
 }
 
+/**
+ * Allow to detect if the div is dragged or clicked
+ */
 function finishDragging() {
 	isDragged = false;
 }
@@ -730,7 +721,7 @@ function loadCss(path) {
 class Recorder {
 	constructor() {
 		logger("Page has finished Loading, launching generic-rrweb-recorder");
-		// We create a mainDiv in which wi will display all menu element as block
+		// We create a mainDiv in which we will display all menu element as block
 		mainDiv = createBaseDiv("rrweb-mainDivButton");
 
 		// We load CSS
