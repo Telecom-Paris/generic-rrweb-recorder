@@ -300,8 +300,16 @@ function pauseRecord() {
 	}
 }
 
+/**
+ * Launch the post edit
+ */
 function postEdit() {
 	logger("Launching the post edit...");
+	localStorage.setItem('rrweb-events', JSON.stringify(events));
+	localStorage.setItem('rrweb-audio', URL.createObjectURL(soundBlob));
+	console.log(localStorage.getItem('rrweb-events'));
+	console.log(localStorage.getItem('rrweb-audio'));
+	window.location = getRightLibPath("edit/edit.html");
 }
 
 function displayPostEditButton() {

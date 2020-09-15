@@ -2,8 +2,11 @@
 <html lang="">
 	<head>
 		<meta charset="utf-8">
-		<title>Edit this lesson</title>
-		<link rel="stylesheet" type="text/css" href="./js/rrweb.min.css">
+        <title>Edit this lesson</title>
+        <script src="../lib/rrweb/dist/rrweb.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="../lib/rrweb/dist/rrweb.min.css">
+        <link rel="stylesheet" type="text/css" href="../lib/noUiSlider-14.6.1/distribute/nouislider.min.css">
+        <script src="../lib/noUiSlider-14.6.1/distribute/nouislider.min.js"></script>
 		<style>
             .replayerButton {
                 background-color: Transparent;
@@ -19,37 +22,40 @@
 
             .divButton { float: left;}
 
-            .slider::-moz-range-thumb {cursor: pointer;}
-
-            .dropdown {
-                position: relative;
-                display: inline-block;
-            }
-
-            .speed-dropdown-content {
-                display: none;
-                position: absolute;
-                background-color: #f1f1f1;
-                min-width: 160px;
-                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-                z-index: 1;
-            }
-
-            .speed-dropdown-content a {
-                color: black;
-                padding: 12px 16px;
-                text-decoration: none;
-                display: block;
-            }
-
-            .speed-dropdown-content a:hover {background-color: #ddd;}
-
-            #speedMenu:hover .speed-dropdown-content {display: block;}
-
-            #speedMenu:hover #speedIcon {background-color: #3e8e41;}
 		</style>
-		<script src="./js/rrweb.min.js"></script>
-		<script>
+        
+        <script src="../lib/noUiSlider-14.6.1/distribute/nouislider.js"></script>
+
+	</head>
+	<body onload="launchRrweb()">
+		<form action='#' onsubmit="return false;">
+            <div id="replayerAndControlDiv" style="transform:scale(0.9);">
+                <div id="replayDiv"></div>
+				<div class="rr-block" id="sliderDiv">
+					<br><div id="slider"></div><br>
+					<div id="controlBar">
+						<div id="controlBarLeft" style="width: 50%;float: left;">
+                            <div class="divButton">
+                                <button id="playButton" class="replayerButton" onclick="clickPlayButton()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M8 5v14l11-7z"/></svg>
+                                </button>
+                            </div>
+                            <div id="soundBar" class="divButton">
+                                <div id="soundBarIcon" class="divButton">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                                </div>
+                                <input id="sliderBarSound" class="slider" type="range" min="0" value="10" max="10" step="1" oninput="updateStatusSoundicon(this.value)">
+                            </div>
+							<div id="textTimer" class="divButton">
+                                0:00 / 0:00
+                            </div>
+						</div>
+						</div>
+					</div>
+                </div>
+			</div>
+        </form>
+        <script>
 			let audio;
 			let replay;
 			let totalTime;
@@ -89,7 +95,7 @@
             }
 
 			function launchRrweb() {
-                audio = new Audio('data/sound.mp3');
+                audio = new Audio(localStorage.getItem('rrweb-audio'));
 				console.log("je lance RRweb");
 
 				// Creating new replayer Object
@@ -246,4 +252,20 @@
                     console.log("Replay time is " + replay.getCurrentTime() / 1000);
 					audio.currentTime = replay.getCurrentTime() / 1000;
                 }
-			}
+            }
+            let events = JSON.parse(localStorage.getItem('rrweb-events'));
+            console.log(events);
+            
+                var slider = document.getElementById('slider');
+
+                noUiSlider.create(slider, {
+                    start: [20, 80],
+                    connect: true,
+                    range: {
+                        'min': 0,
+                        'max': 100
+                    }
+                });
+ </script>
+	</body>
+</html>
