@@ -5,8 +5,8 @@
         <title>Edit this lesson</title>
         <script src="../lib/rrweb/dist/rrweb.min.js"></script>
         <link rel="stylesheet" type="text/css" href="../lib/rrweb/dist/rrweb.min.css">
-        <link rel="stylesheet" type="text/css" href="../lib/noUiSlider-14.6.1/distribute/nouislider.min.css">
-        <script src="../lib/noUiSlider-14.6.1/distribute/nouislider.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="../lib/noUISlider/distribute/nouislider.min.css">
+        <script src="../lib/noUISlider/distribute/nouislider.min.js"></script>
 		<style>
             .replayerButton {
                 background-color: Transparent;
@@ -20,48 +20,51 @@
 
             #soundBar:hover > #sliderBarSound { visibility: visible; }
 
-            .divButton { float: left;}
+            .slider::-moz-range-thumb {cursor: pointer;}
 
+            .divButtonLeft {float: left;}
+
+            .divButtonRight {float: right;}
+
+            #controlBarLeft {float: left;}
+            #controlBarRight {float: right;}
+
+            #controlBarLeft, #controlBarRight { width: 50%;}
 		</style>
-        
-        <script src="../lib/noUiSlider-14.6.1/distribute/nouislider.js"></script>
-
 	</head>
 	<body onload="launchRrweb()">
-		<form action='#' onsubmit="return false;">
-            <div id="replayerAndControlDiv" style="transform:scale(0.9);">
-                <div id="replayDiv"></div>
-				<div class="rr-block" id="sliderDiv">
-					<br><div id="slider"></div><br>
-					<div id="controlBar">
-						<div id="controlBarLeft" style="width: 50%;float: left;">
-                            <div class="divButton">
-                                <button id="playButton" class="replayerButton" onclick="clickPlayButton()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M8 5v14l11-7z"/></svg>
-                                </button>
+        <div id="replayerAndControlDiv" style="transform:scale(0.9);">
+            <div id="replayDiv"></div>
+            <div class="rr-block" id="sliderDiv">
+                <br><div id="slider"></div><br>
+                <div id="controlBar">
+                    <div id="controlBarLeft" style="width: 50%;float: left;">
+                        <div class="divButtonLeft">
+                            <button id="playButton" class="replayerButton" onclick="clickPlayButton()">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M8 5v14l11-7z"/></svg>
+                            </button>
+                        </div>
+                        <div id="soundBar" class="divButtonLeft">
+                            <div id="soundBarIcon" class="divButton">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                             </div>
-                            <div id="soundBar" class="divButton">
-                                <div id="soundBarIcon" class="divButton">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                                </div>
-                                <input id="sliderBarSound" class="slider" type="range" min="0" value="10" max="10" step="1" oninput="updateStatusSoundicon(this.value)">
-                            </div>
-							<div id="textTimer" class="divButton">
-                                0:00 / 0:00
-                            </div>
-						</div>
-						</div>
-					</div>
+                            <input id="sliderBarSound" class="slider" type="range" min="0" value="10" max="10" step="1" oninput="updateStatusSoundIcon(this.value)">
+                        </div>
+                        <div id="textTimer" class="divButton">0:00 / 0:00</div>
+                    </div>
+                    <div id="controlBarRight">
+                        <button class="divButtonRight" onclick="doneButton()">Done</button>
+                    </div>
                 </div>
-			</div>
-        </form>
+            </div>
+        </div>
         <script>
+            let events;
 			let audio;
 			let replay;
 			let totalTime;
 			
 			let playButtonStatus = "PAUSED";
-            let fullscrenButtonStatus = "SMALL";
             
             let totalTimeInSec = 0;
             let currentTime = 0;
@@ -69,6 +72,8 @@
             let eventsPerSecond;
             let interval;
             
+            let slider;
+
             let sliderbarValue = 0;
 
 			function computeSliderBar(value) {
@@ -84,6 +89,14 @@
                 audio.currentTime = replay.getCurrentTime() / 1000;
 			}
 			
+            function doneButton() {
+                if (confirm("Are you sure you did all your modifications ?") == true) {
+                    let splittedValues = String(slider.get()).split(",");
+                    console.log("Going to slice to keet only between " + Math.floor(splittedValues[0]) + " and " + Math.floor(splittedValues[1]));
+                    //events.slice(parseInt(splittedValues[0]), parseInt(splittedValues[1]));
+                }
+            }
+
 			function convertTextTimer(millis) {
                 var minutes = Math.floor(millis / 60000);
                 var seconds = ((millis % 60000) / 1000).toFixed(0);
@@ -95,6 +108,8 @@
             }
 
 			function launchRrweb() {
+                events = JSON.parse(localStorage.getItem('rrweb-events'));
+                console.log(events);
                 audio = new Audio(localStorage.getItem('rrweb-audio'));
 				console.log("je lance RRweb");
 
@@ -109,17 +124,13 @@
                 totalTimeInSec = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]) / 1000;
                 document.getElementById('textTimer').innerHTML = "0:00 / " + totalTime;
 				
-				//Set sliderBar max value
-				document.getElementById('sliderBar').max = events.length - 1;
-				document.getElementById('sliderBar').value = 0;
-				console.log(replay.getTimeOffset());
-				
 				// Set correct volume level
 				audio.volume = document.getElementById('sliderBarSound').value / 10;
-				updateStatusSoundicon(document.getElementById('sliderBarSound').value);
+				updateStatusSoundIcon(document.getElementById('sliderBarSound').value);
+                createSlider();
 			}
 
-			function updateStatusSoundicon(rangeBarValue) {
+			function updateStatusSoundIcon(rangeBarValue) {
                 let soundIcon = document.getElementById('soundBarIcon');
                                 
                 if (rangeBarValue == 0) {
@@ -141,75 +152,6 @@
 			function updateTextTimer(millis) {
                 document.getElementById('textTimer').innerHTML = convertTextTimer(millis) + " / " + totalTime;
 			}
-
-			function openFullscreen(elem) {
-                if (elem.requestFullscreen) {
-                    elem.requestFullscreen();
-                } else if (elem.mozRequestFullScreen) { /* Firefox */
-                    elem.mozRequestFullScreen();
-                } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
-                    elem.webkitRequestFullscreen();
-                } else if (elem.msRequestFullscreen) { /* IE/Edge */
-                    elem.msRequestFullscreen();
-                }
-            }
-			
-			function closeFullscreen() {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.mozCancelFullScreen) { /* Firefox */
-                    document.mozCancelFullScreen();
-                } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) { /* IE/Edge */
-                    document.msExitFullscreen();
-                }
-            }
-			
-			function clickFullscreenButton() {
-                if (fullscrenButtonStatus == "SMALL")
-                {
-                    //Set Fullscreen
-                    fullscrenButtonStatus = "FULL";
-                    
-                    let elem = document.documentElement;
-
-                    openFullscreen(elem);
-
-                    document.getElementById('fullscreenButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z\"/></svg>";
-                } else if (fullscrenButtonStatus == "FULL") {
-                    //Set minified version
-                    fullscrenButtonStatus = "SMALL";
-                    
-                    closeFullscreen();
-
-                    document.getElementById('fullscreenButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z\"/></svg>";
-                }
-			}
-
-			function goForward10() {
-                currentTime += 10000;
-			}
-
-			function comeBack10() {
-                if (currentTime > 10000)
-                    currentTime -= 10000;
-                else
-                    currentTime = 0;
-			}
-            
-            function setSpeed(newSpeed) {
-                console.log("Set the speed to " + newSpeed);
-                
-                if (playButtonStatus == "PLAYING") {
-                    currentTime = replay.getCurrentTime();    
-                    replay.pause();
-                }
-                replay.setConfig({speed: newSpeed});
-                if (playButtonStatus == "PLAYING")
-                    replay.play(currentTime);
-                audio.playbackRate = newSpeed;
-            }
 
 			function clickPlayButton() {
                 if (playButtonStatus == "PAUSED") {
@@ -253,19 +195,34 @@
 					audio.currentTime = replay.getCurrentTime() / 1000;
                 }
             }
-            let events = JSON.parse(localStorage.getItem('rrweb-events'));
-            console.log(events);
-            
-                var slider = document.getElementById('slider');
+            let arrayIndex = 0;
 
-                noUiSlider.create(slider, {
-                    start: [20, 80],
+            function createSlider() {
+                var sliderDOM = document.getElementById('slider');
+
+                slider = noUiSlider.create(sliderDOM, {
+                    start: [0, events.length],
                     connect: true,
                     range: {
                         'min': 0,
-                        'max': 100
+                        'max': events.length - 1
                     }
                 });
+                
+                slider.on('update', function (values, handle) {
+                    console.log("New value is " + values + "handle moving is " + handle);
+                    console.log("New value is " + typeof(values));
+                     // Update the view in the iframe
+                    arrayIndex = parseInt(String(values).split(",")[handle]);
+                    console.log("arrayIndex = " + arrayIndex);
+
+                    replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
+                    // Update the textTimer
+                    document.getElementById('textTimer').innerHTML = convertTextTimer(computeTimeBetweenTwoFrames(events[arrayIndex], events[0])) + " / " + totalTime;
+                    currentTime = replay.getCurrentTime();
+                    audio.currentTime = replay.getCurrentTime() / 1000;
+                });
+            }
  </script>
 	</body>
 </html>
