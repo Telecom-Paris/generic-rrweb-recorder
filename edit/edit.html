@@ -7,6 +7,7 @@
         <link rel="stylesheet" type="text/css" href="../lib/rrweb/dist/rrweb.min.css">
         <link rel="stylesheet" type="text/css" href="../lib/noUISlider/distribute/nouislider.min.css">
         <script src="../lib/noUISlider/distribute/nouislider.min.js"></script>
+        <script src="../lib/simple-mp3-cutter/src/cutter.js"></script>
 		<style>
             .replayerButton {
                 background-color: Transparent;
@@ -60,7 +61,7 @@
         </div>
         <script>
             let events;
-			let audio;
+			let audioDom;
 			let replay;
 			let totalTime;
 			
@@ -74,7 +75,11 @@
             
             let slider;
 
+            let cutterLib;
+
             let sliderbarValue = 0;
+
+            let audioBlob;
 
 			function computeSliderBar(value) {
                 console.log("value before = " + sliderbarValue);
@@ -86,14 +91,26 @@
                 // Update the textTimer
                 document.getElementById('textTimer').innerHTML = convertTextTimer(computeTimeBetweenTwoFrames(events[value], events[0])) + " / " + totalTime;
                 currentTime = replay.getCurrentTime();
-                audio.currentTime = replay.getCurrentTime() / 1000;
+                audioDom.currentTime = replay.getCurrentTime() / 1000;
 			}
-			
+
             function doneButton() {
                 if (confirm("Are you sure you did all your modifications ?") == true) {
                     let splittedValues = String(slider.get()).split(",");
                     console.log("Going to slice to keet only between " + Math.floor(splittedValues[0]) + " and " + Math.floor(splittedValues[1]));
-                    //events.slice(parseInt(splittedValues[0]), parseInt(splittedValues[1]));
+                    events.slice(parseInt(splittedValues[0]), parseInt(splittedValues[1]));
+                    
+                    console.log(audioBlob);
+
+                    let startCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[0])], events[0]) % 6000) / 1000;
+                    let endCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[1])], events[0]) % 6000) / 1000;
+
+                    console.log("Keeping between " + startCut + "/" + endCut);
+
+                    cutterLib.cut(audioBlob, startCut, endCut, function(cuttedBlob) {
+                        console.log("Splitting completed");
+                        console.log(cuttedBlob);    
+                    }, 160);
                 }
             }
 
@@ -107,11 +124,14 @@
                 return firstFrame.timestamp - secondFrame.timestamp;
             }
 
-			function launchRrweb() {
+			async function launchRrweb() {
                 events = JSON.parse(localStorage.getItem('rrweb-events'));
                 console.log(events);
-                audio = new Audio(localStorage.getItem('rrweb-audio'));
-				console.log("je lance RRweb");
+                audioBlob = await fetch(localStorage.getItem('rrweb-audio')).then(r => r.blob());
+                audioDom = new Audio(localStorage.getItem('rrweb-audio'));
+                console.log("je lance RRweb");
+                
+                cutterLib = new mp3cutter("../lib/web-audio-recorder/lib/");
 
 				// Creating new replayer Object
 				replay = new rrweb.Replayer(events, {root: document.getElementById('replayDiv')});
@@ -125,7 +145,7 @@
                 document.getElementById('textTimer').innerHTML = "0:00 / " + totalTime;
 				
 				// Set correct volume level
-				audio.volume = document.getElementById('sliderBarSound').value / 10;
+				audioDom.volume = document.getElementById('sliderBarSound').value / 10;
 				updateStatusSoundIcon(document.getElementById('sliderBarSound').value);
                 createSlider();
 			}
@@ -146,7 +166,7 @@
                     // Sound icon with 2 sound bar
                     soundIcon.innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z\"/></svg>";
                 }
-                audio.volume = rangeBarValue / 10;
+                audioDom.volume = rangeBarValue / 10;
 			}
 			
 			function updateTextTimer(millis) {
@@ -175,7 +195,7 @@
                     },1000);
                     
                     replay.play(currentTime);
-                    audio.play();
+                    audioDom.play();
                 } else if (playButtonStatus == "PLAYING") {
                     playButtonStatus = "PAUSED";
                     
@@ -189,10 +209,10 @@
                     clearInterval(interval);
                     
                     replay.pause();
-                    audio.pause();
+                    audioDom.pause();
                     
                     console.log("Replay time is " + replay.getCurrentTime() / 1000);
-					audio.currentTime = replay.getCurrentTime() / 1000;
+					audioDom.currentTime = replay.getCurrentTime() / 1000;
                 }
             }
             let arrayIndex = 0;
@@ -220,7 +240,7 @@
                     // Update the textTimer
                     document.getElementById('textTimer').innerHTML = convertTextTimer(computeTimeBetweenTwoFrames(events[arrayIndex], events[0])) + " / " + totalTime;
                     currentTime = replay.getCurrentTime();
-                    audio.currentTime = replay.getCurrentTime() / 1000;
+                    audioDom.currentTime = replay.getCurrentTime() / 1000;
                 });
             }
  </script>

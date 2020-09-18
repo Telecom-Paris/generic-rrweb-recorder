@@ -1,5 +1,13 @@
 # Generic-rrweb-recorder
 
+This repo is using submodules.
+
+Do not forget to clone the repo using ```--recursive``` option
+
+```
+git clone --recursive https://github.com/Telecom-Paris/generic-rrweb-recorder.git
+```
+
 ### How to install it ?
 
 Just include a line in the header of your website :

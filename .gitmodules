@@ -7,3 +7,6 @@
 [submodule "lib/web-audio-recorder"]
 	path = lib/web-audio-recorder
 	url = https://github.com/higuma/web-audio-recorder-js.git
+[submodule "lib/simple-mp3-cutter"]
+	path = lib/simple-mp3-cutter
+	url = https://github.com/lubenard/simple-mp3-cutter
