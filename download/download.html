@@ -66,6 +66,8 @@
             let sliderbarValue = 0;
 
 			function computeSliderBar(value) {
+                if (playButtonStatus == "PLAYING")
+                    setReplayerStatus("PAUSED");
                 console.log("value before = " + sliderbarValue);
                 // Value is a string :)
                 sliderbarValue = parseInt(value);
@@ -73,11 +75,54 @@
                 // Update the view in the iframe
                 replay.pause(events[value].timestamp - events[0].timestamp);
                 // Update the textTimer
-                document.getElementById('textTimer').innerHTML = convertTextTimer(computeTimeBetweenTwoFrames(events[value], events[0])) + " / " + totalTime;
+                console.log(replay.getCurrentTime);
+                document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
                 currentTime = replay.getCurrentTime();
                 audio.currentTime = replay.getCurrentTime() / 1000;
 			}
-			
+            
+            function setReplayerStatus(newStatus) {
+                if (newStatus == "PLAYING") {
+                    console.log("The replayer has started");
+                    
+                    // display pause Button
+                    document.getElementById('playButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M6 19h4V5H6v14zm8-14v14h4V5h-4z\"/></svg>";
+                    
+                    console.log(events.length + " / " + totalTimeInSec);
+                    eventsPerSecond = events.length / totalTimeInSec;
+                    
+                    interval = setInterval(function() {
+                        if (sliderbarValue < events.length - 1) {
+                            sliderbarValue += Math.floor(eventsPerSecond);
+                            document.getElementById('sliderBar').value = sliderbarValue;
+                            console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
+                            console.log(replay.getCurrentTime());
+                            document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
+                        }
+                    },1000);
+                    
+                    replay.play(currentTime);
+                    audio.play();
+                }
+                else if (newStatus == "PAUSED") {
+                    console.log("The replay has paused");
+                    
+                    currentTime = replay.getCurrentTime();
+                    
+                    // display play button
+                    document.getElementById('playButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M8 5v14l11-7z\"/></svg>";
+                    
+                    clearInterval(interval);
+                    
+                    replay.pause();
+                    audio.pause();
+                    
+                    console.log("Replay time is " + replay.getCurrentTime() / 1000);
+                    audio.currentTime = replay.getCurrentTime() / 1000;
+                }
+                playButtonStatus = newStatus;
+            }
+
 			function convertTextTimer(millis) {
                 var minutes = Math.floor(millis / 60000);
                 var seconds = ((millis % 60000) / 1000).toFixed(0);
@@ -159,7 +204,7 @@
                     document.msExitFullscreen();
                 }
             }
-			
+            
 			function clickFullscreenButton() {
                 if (fullscrenButtonStatus == "SMALL")
                 {
@@ -195,55 +240,23 @@
             function setSpeed(newSpeed) {
                 console.log("Set the speed to " + newSpeed);
                 
+                let oldStatus = playButtonStatus;
+
                 if (playButtonStatus == "PLAYING") {
-                    currentTime = replay.getCurrentTime();    
-                    replay.pause();
+                    setReplayerStatus("PAUSED");
                 }
+                
                 replay.setConfig({speed: newSpeed});
-                if (playButtonStatus == "PLAYING")
-                    replay.play(currentTime);
                 audio.playbackRate = newSpeed;
+
+                if (oldStatus == "PLAYING")
+                    setReplayerStatus("PAUSED");
             }
 
 			function clickPlayButton() {
                 if (playButtonStatus == "PAUSED") {
-                    playButtonStatus = "PLAYING";
-                    
-                    console.log("The replayer has started");
-                    
-                    // display pause Button
-                    document.getElementById('playButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M6 19h4V5H6v14zm8-14v14h4V5h-4z\"/></svg>";
-                    
-                    console.log(events.length + " / " + totalTimeInSec);
-                    eventsPerSecond = events.length / totalTimeInSec;
-                    
-                    interval = setInterval(function() {
-                        if (sliderbarValue < events.length - 1) {
-                            sliderbarValue += Math.floor(eventsPerSecond);
-                            document.getElementById('sliderBar').value = sliderbarValue;
-                            console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
-                            document.getElementById('textTimer').innerHTML = convertTextTimer(computeTimeBetweenTwoFrames(events[sliderbarValue], events[0])) + " / " + totalTime;
-                        }
-                    },1000);
-                    
-                    replay.play(currentTime);
-                    audio.play();
+                    setReplayerStatus("PLAYING");
                 } else if (playButtonStatus == "PLAYING") {
-                    playButtonStatus = "PAUSED";
-                    
-                    console.log("The replay has paused");
-                    
-                    currentTime = replay.getCurrentTime();
-                    
-                    // display play button
-                    document.getElementById('playButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M8 5v14l11-7z\"/></svg>";
-                    
-                    clearInterval(interval);
-                    
-                    replay.pause();
-                    audio.pause();
-                    
-                    console.log("Replay time is " + replay.getCurrentTime() / 1000);
-					audio.currentTime = replay.getCurrentTime() / 1000;
+                    setReplayerStatus("PAUSED");
                 }
-			}
+            }
