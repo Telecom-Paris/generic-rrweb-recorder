@@ -81,6 +81,8 @@
 
             let audioBlob;
 
+            let hasUserChangedValues = false;
+
 			function computeSliderBar(value) {
                 console.log("value before = " + sliderbarValue);
                 // Value is a string :)
@@ -96,21 +98,25 @@
 
             function doneButton() {
                 if (confirm("Are you sure you did all your modifications ?") == true) {
-                    let splittedValues = String(slider.get()).split(",");
-                    console.log("Going to slice to keet only between " + Math.floor(splittedValues[0]) + " and " + Math.floor(splittedValues[1]));
-                    events.slice(parseInt(splittedValues[0]), parseInt(splittedValues[1]));
+                    // No need to cut anything if the user does not change anything!
+                    // Avoid (re)compresssing sound and slicing events for nothing
+                    if (hasUserChangedValues) {
+                        let splittedValues = String(slider.get()).split(",");
+                        console.log("Going to slice to keet only between " + Math.floor(splittedValues[0]) + " and " + Math.floor(splittedValues[1]));
+                        events.slice(parseInt(splittedValues[0]), parseInt(splittedValues[1]));
                     
-                    console.log(audioBlob);
+                        console.log(audioBlob);
 
-                    let startCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[0])], events[0]) % 6000) / 1000;
-                    let endCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[1])], events[0]) % 6000) / 1000;
+                        let startCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[0])], events[0]) % 6000) / 1000;
+                        let endCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[1])], events[0]) % 6000) / 1000;
 
-                    console.log("Keeping between " + startCut + "/" + endCut);
+                        console.log("Keeping between " + startCut + "/" + endCut);
 
-                    cutterLib.cut(audioBlob, startCut, endCut, function(cuttedBlob) {
-                        console.log("Splitting completed");
-                        console.log(cuttedBlob);    
-                    }, 160);
+                        cutterLib.cut(audioBlob, startCut, endCut, function(cuttedBlob) {
+                            console.log("Splitting completed");
+                            console.log(cuttedBlob);    
+                        }, 160);
+                    }
                 }
             }
 
@@ -230,6 +236,7 @@
                 });
                 
                 slider.on('update', function (values, handle) {
+                    hasUserChangedValues = true;
                     console.log("New value is " + values + "handle moving is " + handle);
                     console.log("New value is " + typeof(values));
                      // Update the view in the iframe
