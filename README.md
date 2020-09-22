@@ -1,6 +1,6 @@
 # Generic-rrweb-recorder
 
-https://img.badgesize.io/Telecom-Paris/generic-rrweb-recorder/dev/srcs/recorder.js
+![](https://img.badgesize.io/Telecom-Paris/generic-rrweb-recorder/dev/srcs/recorder.js)
 
 This repo is using submodules.
 
