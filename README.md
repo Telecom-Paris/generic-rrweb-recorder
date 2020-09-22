@@ -1,5 +1,7 @@
 # Generic-rrweb-recorder
 
+https://img.badgesize.io/Telecom-Paris/generic-rrweb-recorder/dev/srcs/recorder.js
+
 This repo is using submodules.
 
 Do not forget to clone the repo using ```--recursive``` option
