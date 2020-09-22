@@ -17,6 +17,30 @@
                 overflow: hidden;
             }
 
+            .own_upload_button {
+                cursor:pointer;
+                border-radius: 25px;
+                height: 50px;
+                border: 2px solid #178fdf;
+                background-color: #178fdf;
+                color: white;
+            }
+
+            #timeBarStepsStart {
+                width: 2px;
+                height: 15px;
+                background: black;
+                left: 0%;
+            }
+
+            .step {
+                width: 2px;
+                height: 12px;
+                left: 3%;
+                background: black;
+                position:absolute;
+            }
+
             #sliderBarSound {width: 40%; visibility: hidden;}
 
             #soundBar:hover > #sliderBarSound { visibility: visible; }
@@ -31,14 +55,26 @@
             #controlBarRight {float: right;}
 
             #controlBarLeft, #controlBarRight { width: 50%;}
+
+            #sound-selector, #event-selector { visibility: hidden; }
 		</style>
 	</head>
-	<body onload="launchRrweb()">
+    <body onload="launchRrweb(false)">
+        <button class="own_upload_button" onclick="document.getElementById('event-selector').click();">Upload your own events</button>
+        <button class="own_upload_button" onclick="document.getElementById('sound-selector').click();">Upload your own sound</button>
+        <button class="own_upload_button" onclick="loadEventsFromUser()">Load!</button>
+        <input type="file" id="sound-selector" accept=".mp3">
+        <input type="file" id="event-selector" accept=".json">
         <div id="replayerAndControlDiv" style="transform:scale(0.9);">
             <div id="replayDiv"></div>
             <div class="rr-block" id="sliderDiv">
                 <br><div id="slider"></div><br>
-                <div id="controlBar">
+                <!--<div id="timeBarSteps">
+                    <div id="timeBarStepsStart"></div>
+                    <div class="step"></div>
+                    <div id="stepText">0:00</div>
+                </div>-->
+                <div id = "controlBar">
                     <div id="controlBarLeft" style="width: 50%;float: left;">
                         <div class="divButtonLeft">
                             <button id="playButton" class="replayerButton" onclick="clickPlayButton()">
@@ -91,7 +127,7 @@
                 // Update the view in the iframe
                 replay.pause(events[value].timestamp - events[0].timestamp);
                 // Update the textTimer
-                document.getElementById('textTimer').innerHTML = convertTextTimer(computeTimeBetweenTwoFrames(events[value], events[0])) + " / " + totalTime;
+                document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
                 currentTime = replay.getCurrentTime();
                 audioDom.currentTime = replay.getCurrentTime() / 1000;
 			}
@@ -130,31 +166,93 @@
                 return firstFrame.timestamp - secondFrame.timestamp;
             }
 
-			async function launchRrweb() {
-                events = JSON.parse(localStorage.getItem('rrweb-events'));
+			async function launchRrweb(manualLoad) {
+                if (manualLoad == false) {
+                    events = JSON.parse(localStorage.getItem('rrweb-events'));
+                    audioDom = new Audio(localStorage.getItem('rrweb-audio'));
+                }
                 console.log(events);
-                audioBlob = await fetch(localStorage.getItem('rrweb-audio')).then(r => r.blob());
-                audioDom = new Audio(localStorage.getItem('rrweb-audio'));
-                console.log("je lance RRweb");
-                
-                cutterLib = new mp3cutter("../lib/web-audio-recorder/lib/");
 
-				// Creating new replayer Object
-				replay = new rrweb.Replayer(events, {root: document.getElementById('replayDiv')});
-
-				// Enable interaction with user
-                replay.enableInteract();
+                if (events && audioDom.src) {
+                    audioBlob = await fetch(localStorage.getItem('rrweb-audio')).then(r => r.blob());
+                    console.log("je lance RRweb");
                 
-                // Compute total time of replay
-                totalTime = convertTextTimer(computeTimeBetweenTwoFrames(events[events.length - 1], events[0]));
-                totalTimeInSec = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]) / 1000;
-                document.getElementById('textTimer').innerHTML = "0:00 / " + totalTime;
+                    cutterLib = new mp3cutter("../lib/web-audio-recorder/lib/");
+
+				    // Creating new replayer Object
+				    replay = new rrweb.Replayer(events, {root: document.getElementById('replayDiv')});
+
+				    // Enable interaction with user
+                    replay.enableInteract();
+                
+                    // Compute total time of replay
+                    totalTime = convertTextTimer(replay.getMetaData().totalTime);
+                    totalTimeInSec = replay.getMetaData().totalTime / 1000;
+                    document.getElementById('textTimer').innerHTML = "0:00 / " + totalTime;
 				
-				// Set correct volume level
-				audioDom.volume = document.getElementById('sliderBarSound').value / 10;
-				updateStatusSoundIcon(document.getElementById('sliderBarSound').value);
-                createSlider();
+				    // Set correct volume level
+				    audioDom.volume = document.getElementById('sliderBarSound').value / 10;
+				    updateStatusSoundIcon(document.getElementById('sliderBarSound').value);
+                    createSlider();
+                    document.getElementById('controlBar').style.visibility = "visible";
+                } else {
+                    //Hide the control bar if no element is there
+                    document.getElementById('controlBar').style.visibility = "hidden";
+                    console.log(events);
+                    console.log(audioDom.src);
+                }
 			}
+
+            let customElemCounter = 0;
+            function launchRrwebWhenCustomLoad(){
+                customElemCounter++;
+
+                if (customElemCounter == 2)
+                    launchRrweb(true);
+            }
+
+            function loadEventsFromUser() {
+                var inputEvents, inputSound, fileSound, fileEvents;
+                let soundFr, eventFr; 
+
+                if (typeof window.FileReader !== 'function') {
+                    alert("The file API isn't supported on this browser yet.");
+                    return;
+                }
+
+                inputEvents = document.getElementById('event-selector');
+                inputSound = document.getElementById('sound-selector');
+
+                if (!inputEvents.files || !inputSound.files) {
+                    alert("This browser doesn't seem to support the `files` property of file inputs.");
+                } else if (!inputEvents.files[0] || !inputSound.files[0]) {
+                    alert("Please select files before clicking 'Load'");
+                } else {
+                    fileSound = inputSound.files[0];
+                    fileEvents = inputEvents.files[0];
+                    eventFr = new FileReader();
+                    
+                    eventFr.readAsText(fileEvents);
+                    //console.log(fr.readAsDataURL(fileSound));
+                    eventFr.onload = function() {
+                        console.log("Finished loading events");
+                        events = JSON.parse(eventFr.result);
+                        console.log(events);
+                        launchRrwebWhenCustomLoad();
+                    };
+
+                    soundFr = new FileReader();
+                    soundFr.readAsDataURL(fileSound);
+                    soundFr.onload = function() {
+                        console.log("Finished loading sound");
+                        audioDom = new Audio(soundFr.result);
+                        console.log(audioDom);
+                        launchRrwebWhenCustomLoad();
+                    };
+
+                    
+                }
+            }
 
 			function updateStatusSoundIcon(rangeBarValue) {
                 let soundIcon = document.getElementById('soundBarIcon');
@@ -196,7 +294,7 @@
                             sliderbarValue += Math.floor(eventsPerSecond);
                             document.getElementById('sliderBar').value = sliderbarValue;
                             console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
-                            document.getElementById('textTimer').innerHTML = convertTextTimer(computeTimeBetweenTwoFrames(events[sliderbarValue], events[0])) + " / " + totalTime;
+                            document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
                         }
                     },1000);
                     
@@ -245,7 +343,7 @@
 
                     replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
                     // Update the textTimer
-                    document.getElementById('textTimer').innerHTML = convertTextTimer(computeTimeBetweenTwoFrames(events[arrayIndex], events[0])) + " / " + totalTime;
+                    document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
                     currentTime = replay.getCurrentTime();
                     audioDom.currentTime = replay.getCurrentTime() / 1000;
                 });
