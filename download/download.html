@@ -65,6 +65,33 @@
             
             let sliderbarValue = 0;
 
+            function launchRrweb() {
+                audio = new Audio('data/sound.mp3');
+				console.log("je lance RRweb");
+
+				// Creating new replayer Object
+				replay = new rrweb.Replayer(events, {root: document.getElementById('replayDiv')});
+
+				// Enable interaction with user
+                replay.enableInteract();
+                
+                // Compute total time of replay
+                totalTime = convertTextTimer(replay.getMetaData().totalTime);
+                totalTimeInSec = replay.getMetaData().totalTime / 1000;
+                document.getElementById('textTimer').innerHTML = "0:00 / " + totalTime;
+				
+				//Set sliderBar max value
+				document.getElementById('sliderBar').max = events.length - 1;
+				document.getElementById('sliderBar').value = 0;
+                eventsPerSecond = Math.floor((events.length / totalTimeInSec)) / 10;
+                console.log("Events par secondes are " + eventsPerSecond);
+				console.log(replay.getTimeOffset());
+				
+				// Set correct volume level
+				audio.volume = document.getElementById('sliderBarSound').value / 10;
+				updateStatusSoundicon(document.getElementById('sliderBarSound').value);
+			}
+
 			function computeSliderBar(value) {
                 if (playButtonStatus == "PLAYING")
                     setReplayerStatus("PAUSED");
@@ -73,9 +100,8 @@
                 sliderbarValue = parseInt(value);
                 console.log("value after = " + sliderbarValue);
                 // Update the view in the iframe
-                replay.pause(events[value].timestamp - events[0].timestamp);
+                replay.pause(events[Math.round(value)].timestamp - events[0].timestamp);
                 // Update the textTimer
-                console.log(replay.getCurrentTime);
                 document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
                 currentTime = replay.getCurrentTime();
                 audio.currentTime = replay.getCurrentTime() / 1000;
@@ -89,17 +115,16 @@
                     document.getElementById('playButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M6 19h4V5H6v14zm8-14v14h4V5h-4z\"/></svg>";
                     
                     console.log(events.length + " / " + totalTimeInSec);
-                    eventsPerSecond = events.length / totalTimeInSec;
                     
                     interval = setInterval(function() {
                         if (sliderbarValue < events.length - 1) {
-                            sliderbarValue += Math.floor(eventsPerSecond);
+                            sliderbarValue += eventsPerSecond;
                             document.getElementById('sliderBar').value = sliderbarValue;
                             console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
-                            console.log(replay.getCurrentTime());
+                            console.log(replay.getCurrentTime() + " / " + replay.getMetaData().totalTime);
                             document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
                         }
-                    },1000);
+                    }, 100);
                     
                     replay.play(currentTime);
                     audio.play();
@@ -128,35 +153,6 @@
                 var seconds = ((millis % 60000) / 1000).toFixed(0);
                 return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
             }
-			
-			function computeTimeBetweenTwoFrames(firstFrame, secondFrame) {
-                return firstFrame.timestamp - secondFrame.timestamp;
-            }
-
-			function launchRrweb() {
-                audio = new Audio('data/sound.mp3');
-				console.log("je lance RRweb");
-
-				// Creating new replayer Object
-				replay = new rrweb.Replayer(events, {root: document.getElementById('replayDiv')});
-
-				// Enable interaction with user
-                replay.enableInteract();
-                
-                // Compute total time of replay
-                totalTime = convertTextTimer(computeTimeBetweenTwoFrames(events[events.length - 1], events[0]));
-                totalTimeInSec = computeTimeBetweenTwoFrames(events[events.length - 1], events[0]) / 1000;
-                document.getElementById('textTimer').innerHTML = "0:00 / " + totalTime;
-				
-				//Set sliderBar max value
-				document.getElementById('sliderBar').max = events.length - 1;
-				document.getElementById('sliderBar').value = 0;
-				console.log(replay.getTimeOffset());
-				
-				// Set correct volume level
-				audio.volume = document.getElementById('sliderBarSound').value / 10;
-				updateStatusSoundicon(document.getElementById('sliderBarSound').value);
-			}
 
 			function updateStatusSoundicon(rangeBarValue) {
                 let soundIcon = document.getElementById('soundBarIcon');
