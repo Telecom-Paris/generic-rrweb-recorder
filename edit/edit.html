@@ -233,7 +233,6 @@
                     eventFr = new FileReader();
                     
                     eventFr.readAsText(fileEvents);
-                    //console.log(fr.readAsDataURL(fileSound));
                     eventFr.onload = function() {
                         console.log("Finished loading events");
                         events = JSON.parse(eventFr.result);
@@ -248,9 +247,7 @@
                         audioDom = new Audio(soundFr.result);
                         console.log(audioDom);
                         launchRrwebWhenCustomLoad();
-                    };
-
-                    
+                    };                   
                 }
             }
 

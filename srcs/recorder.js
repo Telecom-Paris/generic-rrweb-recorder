@@ -601,15 +601,15 @@ function downRecord() {
  */
 function buttonPosition(button) {
 	if (config.position.search("bottom") > -1)
-		button.style.bottom = "50";
+		button.style.bottom = "50px";
 	if (config.position.search("top") > -1)
-		button.style.top = "50";
+		button.style.top = "50px";
 	if (config.position.search("middle") > -1)
-		button.style.top = "50";
+		button.style.top = "50px";
 	if (config.position.search("-right") > -1)
-		button.style.right = "50";
+		button.style.right = "50px";
 	if (config.position.search("-left") > -1)
-		button.style.left = "50";
+		button.style.left = "50px";
 }
 
 /**
