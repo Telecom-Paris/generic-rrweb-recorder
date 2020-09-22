@@ -97,7 +97,7 @@ let isActive;
 let interval;
 
 /**
- * Recorder Object
+ * Audio Recorder Object
  * @type {Object}
  */
 let recorder;
@@ -342,6 +342,16 @@ function launchRecord() {
 			let input = audioContext.createMediaStreamSource(stream);
 
 			if (areRecordScriptsLoaded) {
+				//Reset the events and audioParts. If you want to record another session without reloading the webpage
+				events = [];
+				audioParts = [];
+
+				//Check if edit and download buttons are visible
+				if (postEdButton && postEdButton.isVisible())
+					postEdButton.hide();
+				if (downButton && downButton.isVisible())
+					downButton.hide();
+
 				recorder = new WebAudioRecorder(input, {
 					workerDir: config.libPath + "lib/web-audio-recorder/lib/",
 					encoding: encodingType,
@@ -796,6 +806,11 @@ class Button {
 	 * Hide the button
 	 */
 	hide() { this.button.style.visibility = "hidden"; }
+
+	/**
+	 * Return if the button is visible or not
+	 */
+	isVisible() { return this.button.style.visibility; }
 
 	/**
 	 * Set all element for a basic button
