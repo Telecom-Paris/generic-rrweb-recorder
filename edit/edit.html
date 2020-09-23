@@ -119,19 +119,6 @@
 
             let hasUserChangedValues = false;
 
-			function computeSliderBar(value) {
-                console.log("value before = " + sliderbarValue);
-                // Value is a string :)
-                sliderbarValue = parseInt(value);
-                console.log("value after = " + sliderbarValue);
-                // Update the view in the iframe
-                replay.pause(events[value].timestamp - events[0].timestamp);
-                // Update the textTimer
-                document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
-                currentTime = replay.getCurrentTime();
-                audioDom.currentTime = replay.getCurrentTime() / 1000;
-			}
-
             function doneButton() {
                 if (confirm("Are you sure you did all your modifications ?") == true) {
                     // No need to cut anything if the user does not change anything!
@@ -172,6 +159,8 @@
                     audioDom = new Audio(localStorage.getItem('rrweb-audio'));
                 }
                 console.log(events);
+
+                document.getElementById('replayDiv').innerHTML = "";
 
                 if (events && audioDom.src) {
                     audioBlob = await fetch(localStorage.getItem('rrweb-audio')).then(r => r.blob());

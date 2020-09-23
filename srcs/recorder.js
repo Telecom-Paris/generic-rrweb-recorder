@@ -100,7 +100,7 @@ let interval;
  * Audio Recorder Object
  * @type {Object}
  */
-let recorder;
+let audioRecorder;
 /**
  * Audio Stream.
  * Allow us to stop it when needed
@@ -263,7 +263,7 @@ function resumeRecord(){
 		pauseButton.style.backgroundImage = getRightLibPath('media/pause32.png', true);
 		document.getElementById('rrweb-pauseRecord').onclick = pauseRecord;
 
-		recorder.startRecording();
+		audioRecorder.startRecording();
 
 		isActive = rrweb.record({
 				emit(event) {
@@ -293,7 +293,7 @@ function pauseRecord() {
 		console.log("I set in pause");
 		if (events.length > 2) {
 			// We stop audioRecorder
-			recorder.finishRecording();
+			audioRecorder.finishRecording();
 
 			//sliderBar.style.background = 'linear-gradient(to right, #82CFD0 0%, #82CFD0 100%, #999999 100%, #999999 100%)';
 		}
@@ -352,7 +352,9 @@ function launchRecord() {
 				if (downButton && downButton.isVisible())
 					downButton.hide();
 
-				recorder = new WebAudioRecorder(input, {
+				isEncodingOver = false;
+
+				audioRecorder = new WebAudioRecorder(input, {
 					workerDir: config.libPath + "lib/web-audio-recorder/lib/",
 					encoding: encodingType,
 					numChannel: 2,
@@ -364,7 +366,7 @@ function launchRecord() {
 					}
 				});
 
-				recorder.onComplete = function(recorder, blob) {
+				audioRecorder.onComplete = function(recorder, blob) {
 					logger("Encoding complete");
 					logger(URL.createObjectURL(blob));
 					audioParts.push(blob);
@@ -373,18 +375,18 @@ function launchRecord() {
 						isEncodingOver = true;
 						gifLoadingButton.hide();
 						displayPostEditButton();
-						displayDownButton();
+						compileDataForDownload();
 					}
 				}
 
-				recorder.setOptions({
+				audioRecorder.setOptions({
 					timeLimit:120,
 					encodeAfterRecord: true,
 					ogg: {quality: 0.5},
 					mp3: {bitRate: 160}
 				});
 
-				recorder.startRecording();
+				audioRecorder.startRecording();
 
 				isActive = rrweb.record({
 					emit(event) {
@@ -429,7 +431,7 @@ function stopRecord() {
 		openMenu();
 
 		// We stop audioRecorder
-		recorder.finishRecording();
+		audioRecorder.finishRecording();
 		recStream.getAudioTracks()[0].stop();
 
 		// Set the event as Blob
@@ -450,7 +452,17 @@ function getRightLibPath(path, isURL) {
 	else return config.libPath + path;
 }
 
-function displayDownButton() {
+function showDownButton() {
+	if (events.length > 2) {
+		changeMainDivSize(80, 0);
+		logger("I can download the page");
+		downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', postEdButton);
+		downButton.createChildButton();
+		downButton.show();
+	}
+}
+
+function compileDataForDownload() {
 	//avoid concatenating if there is only one element
 	if (audioParts.length > 1) {
 		logger("Loading ConcatenateBlobs");
@@ -458,14 +470,7 @@ function displayDownButton() {
 		loadJS(config.libPath + "lib/concatenate-blob/ConcatenateBlobs.js", function () {
 			ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
 				soundBlob = resultingBlob;
-				console.log(audioParts);
-				if (events.length > 2) {
-					changeMainDivSize(80, 0);
-					logger("I can download the page");
-					downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', postEdButton);
-					downButton.createChildButton();
-					downButton.show();
-				}
+				showDownButton();
 			});
 			
 		});
@@ -473,13 +478,7 @@ function displayDownButton() {
 	else {
 		logger("No need to load ConcatenateBlobs");
 		soundBlob = audioParts[0];
-		if (events.length > 2) {
-			changeMainDivSize(80, 0);
-			logger("I can download the page");
-			downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', postEdButton);
-			downButton.createChildButton();
-			downButton.show();
-		}
+		showDownButton();
 	}
 }
 
@@ -679,8 +678,8 @@ function makeElementMovable(element) {
 			mouseX = e.clientX;
 			mouseY = e.clientY;
 			// set the element's new position, only if not going out of the window:
-			if (elmnt.offsetLeft - pos1 >= 0 && (elmnt.offsetLeft + 70) - pos1 < window.screen.width
-				&& elmnt.offsetTop - pos2 >= 0 && (elmnt.offsetTop + 70) - pos2 < window.screen.height)
+			if (elmnt.offsetLeft - pos1 >= 0 && (elmnt.offsetLeft + mainDivSize.width) - pos1 < window.screen.width
+				&& elmnt.offsetTop - pos2 >= 0 && (elmnt.offsetTop + mainDivSize.width) - pos2 < window.screen.height)
 			{
 				elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
 				elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
