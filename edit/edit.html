@@ -8,6 +8,7 @@
         <link rel="stylesheet" type="text/css" href="../lib/noUISlider/distribute/nouislider.min.css">
         <script src="../lib/noUISlider/distribute/nouislider.min.js"></script>
         <script src="../lib/simple-mp3-cutter/src/cutter.js"></script>
+        <script src="../lib/jszip/dist/jszip.min.js"></script>
 		<style>
             .replayerButton {
                 background-color: Transparent;
@@ -130,17 +131,96 @@
                     
                         console.log(audioBlob);
 
-                        let startCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[0])], events[0]) % 6000) / 1000;
-                        let endCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[1])], events[0]) % 6000) / 1000;
+                        console.log();
+                        let startCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[0])], events[0]) % 60000) / 1000;
+                        let endCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[1])], events[0]) % 60000) / 1000;
 
-                        console.log("Keeping between " + startCut + "/" + endCut);
+                        console.log("Keeping between " + startCut + " sec and " + endCut + " sec");
 
                         cutterLib.cut(audioBlob, startCut, endCut, function(cuttedBlob) {
                             console.log("Splitting completed");
-                            console.log(cuttedBlob);    
+                            console.log(cuttedBlob);
+
+                            let zip = new JSZip();
+
+		                    let textData = readTextFile("../download/download.html");
+                            let textDataEnd = readTextFile("../download/download_end.html");
+		                    let jsData = readTextFile("../lib/rrweb/dist/rrweb.min.js");
+		                    let cssData = readTextFile("../lib/rrweb/dist/rrweb.min.css");
+
+                            console.log(addslashes(JSON.stringify(events)));
+		                    let addEventsToFile = "let events_string = \"" + addslashes(JSON.stringify(events)) + '";';
+
+                            let eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
+
+		                    textData += addEventsToFile + textDataEnd;
+	                    	zip.file("index.html", textData);
+                    		zip.file("js/rrweb.min.js", jsData);
+	                    	zip.file("js/rrweb.min.css", cssData);
+                    		zip.file("data/events.json", eventBlob);
+                    		zip.file("data/sound.mp3", cuttedBlob);
+
+                    		// Once archive has been generated, we can download it
+                    		zip.generateAsync({type:"blob"})
+                    		.then(function(content) {
+                    			saveAs(content, "cours.zip");
+                    		});
                         }, 160);
                     }
                 }
+            }
+
+            function saveAs(data, filename) {
+            	// Create invisible link
+            	const a = document.createElement("a");
+            	a.style.display = "none";
+            	document.body.appendChild(a);
+
+    	        // Set the HREF to a Blob representation of the data to be downloaded
+    	        a.href = window.URL.createObjectURL(
+    	        	new Blob([data], { type: "application/zip" })
+            	);
+
+      	        // Use download attribute to set set desired file name
+       	        a.setAttribute("download", filename);
+
+               	// Trigger the download by simulating click
+            	a.click();
+
+            	// Cleanup
+            	window.URL.revokeObjectURL(a.href);
+               	document.body.removeChild(a);
+            }
+
+
+            function addslashes(str) {
+	            return str.replace(/\\/g, '\\\\').
+		        replace(/\u0008/g, '\\b').
+         		replace(/\t/g, '\\t').
+	         	replace(/\n/g, '\\n').
+	        	replace(/\f/g, '\\f').
+	        	replace(/\r/g, '\\r').
+	        	replace(/'/g, '\\\'').
+	        	replace(/"/g, '\\"').
+	        	replace(/\//g, '\\/');
+            }
+
+            function readTextFile(file) {
+	            var rawFile = new XMLHttpRequest();
+	            var isFileValid = false;
+	            rawFile.open("GET", file, false);
+	            rawFile.onreadystatechange = function () {
+		            if (rawFile.readyState === 4) {
+			            if(rawFile.status === 200 || rawFile.status == 0) {
+				            isFileValid = true;
+			            }
+		            }
+	            }
+	            rawFile.send(null);
+	            if (isFileValid)
+		            return rawFile.responseText;
+	            else
+		            return "error";
             }
 
 			function convertTextTimer(millis) {

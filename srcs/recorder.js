@@ -508,8 +508,7 @@ function openMenu() {
  * @param {Object} data raw data of the zip file
  * @param {string} filename The name we want to give to the downloaded filename
  */
-function saveAs(data, filename)
-{
+function saveAs(data, filename) {
 	// Create invisible link
 	const a = document.createElement("a");
 	a.style.display = "none";
@@ -577,7 +576,7 @@ function addslashes(str) {
  */
 function downRecord() {
 	//Load Jszip (minified Because it load faster)
-	loadJS("./lib/jszip/dist/jszip.js", function() {
+	loadJS("./lib/jszip/dist/jszip.min.js", function() {
 		let zip = new JSZip();
 
 		let textData = readTextFile("./download/download.html");
