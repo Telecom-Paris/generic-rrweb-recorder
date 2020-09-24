@@ -163,6 +163,14 @@ let isEncodingOver = false;
 let lastButton;
 
 /**
+ * 
+ */
+let pauseTimer = [];
+let pauseTimerCheckPoint = [];
+let isPauseTimerRunning = false;
+let pauseStart = 0;
+
+/**
  * Load different JS library and callback when fully loaded
  * @param {string} src The path of the script (can be relative or absolute)
  * @param {Function} cb Callback, function to launch when loaded
@@ -271,7 +279,17 @@ function resumeRecord(){
 				events.push(event);
 			},
 		});
-		interval = setInterval(function () {logger(events);}, 1000);
+		interval = setInterval(function () {logger("Length of events " + events.length);}, 1000);
+
+		isPauseTimerRunning = false;
+		if (pauseTimer.length == 0)
+			pauseTimer.push((new Date()).getTime() - pauseStart);
+		else {
+			logger("Adding last element: " + pauseTimer[pauseTimer.length - 1] + " to this element");
+			pauseTimer.push(pauseTimer[pauseTimer.length - 1] + ((new Date()).getTime() - pauseStart));
+		}
+		console.log(pauseTimer);
+		console.log(pauseTimerCheckPoint);
 	}
 }
 
@@ -279,8 +297,6 @@ function resumeRecord(){
  * When the record is in pause make appear the range bar
  */
 function pauseRecord() {
-	let sliderDiv;
-
 	if (!isDragged) {
 		recorderState = "PAUSED";
 		if (isActive)
@@ -291,12 +307,13 @@ function pauseRecord() {
 		document.getElementById('rrweb-pauseRecord').onclick = resumeRecord;
 
 		console.log("I set in pause");
-		if (events.length > 2) {
-			// We stop audioRecorder
-			audioRecorder.finishRecording();
+		// We stop audioRecorder
+		audioRecorder.finishRecording();
 
-			//sliderBar.style.background = 'linear-gradient(to right, #82CFD0 0%, #82CFD0 100%, #999999 100%, #999999 100%)';
-		}
+		// Start counting pause time
+		isPauseTimerRunning = true;
+		pauseStart = (new Date()).getTime();
+		pauseTimerCheckPoint.push(events.length - 1);
 	}
 }
 
@@ -436,6 +453,26 @@ function stopRecord() {
 
 		// Set the event as Blob
 		eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
+
+		// If user has set pause, start recomputing timestamps
+		if (pauseTimer.length >= 1) {
+			logger("We have to recompute timestamps");
+			let i = pauseTimerCheckPoint[0] + 1;
+			let j = pauseTimer.length == 1 ? events.length -1 : pauseTimerCheckPoint[1];
+			let k = 1;
+			for (;k < pauseTimer.length; k++) {
+				logger("Pour l'interval " + i + " -> " + j + " on enlève: " + pauseTimer[k -1]);
+				for (;i < j; i++){ events[i].timestamp -= pauseTimer[k - 1]; }
+				i = pauseTimerCheckPoint[k] + 1;
+				j = pauseTimerCheckPoint[k + 1];
+			}
+			j = events.length - 1;
+			logger("Pour l'interval " + i + " -> " + j + " on enlève: " + pauseTimer[k -1]);
+			for (;i < j; i++){
+				events[i].timestamp -= pauseTimer[k - 1];
+			}
+			logger("La correction des timestamps a été effectuée");
+		}
 
 		if (isEncodingOver == false) {
 			//Display GIF loading
