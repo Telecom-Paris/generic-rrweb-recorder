@@ -9,17 +9,26 @@
 	border: none;
 	background-repeat: no-repeat;
 	background-position: center;
-	height: 70px;
-	width: 70px;
-	top: 0%;
 	position: absolute;
+	top: 0%;
+}
+
+#rrweb-minimizeButton {
+	height: 30px;
+	width: 30px;
+	left: -30px;
+	background-color: #0e4388;
 }
 
 .rrweb-ChildButton {
+	height: 70px;
+	width: 70px;
 	background-color: #fdd03b;
 }
 
 #rrweb-recordButton {
+	height: 70px;
+	width: 70px;
 	background-color: #d92027;
 	cursor: move;
 }

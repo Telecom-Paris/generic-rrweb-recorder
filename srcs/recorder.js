@@ -170,6 +170,9 @@ let pauseTimerCheckPoint = [];
 let isPauseTimerRunning = false;
 let pauseStart = 0;
 
+
+let minimizeButton; 
+
 /**
  * Load different JS library and callback when fully loaded
  * @param {string} src The path of the script (can be relative or absolute)
@@ -537,7 +540,29 @@ function openMenu() {
 			changeMainDivSize(-80, 0);
 			isMenuOpen = false;
 		}
+		// Let's create the minimize button. as this is not a normal button, we cannot create it with 
+		// the button class
+		minimizeButton = createMinimizeButton();
 	}
+}
+
+function minimizeAllEements() {
+	recordButton.hide();
+	pauseButton.hide();
+	downButton.hide();
+	minimizeButton.onlick = maximizeAllEllements();
+}
+
+function createMinimizeButton() {
+		let button = document.createElement("input");
+		button.type = "button";
+		//button.onclick = minimizeAllEements();
+		button.id = "rrweb-minimizeButton";
+		button.style.backgroundImage = getRightLibPath('media/minimize32.png', true);;
+		button.title = "Minimize the icons";
+		button.classList.add("rrweb-Buttons");
+		mainDiv.appendChild(button);
+		return button;
 }
 
 /**
