@@ -127,11 +127,24 @@
                     if (hasUserChangedValues) {
                         let splittedValues = String(slider.get()).split(",");
                         console.log("Going to slice to keet only between " + Math.floor(splittedValues[0]) + " and " + Math.floor(splittedValues[1]));
-                        events.slice(parseInt(splittedValues[0]), parseInt(splittedValues[1]));
+                        
+                        cuttedEvents = events.slice(parseInt(splittedValues[0]), parseInt(splittedValues[1]));
                     
+                        console.log("Before adding 2 first");
+                        console.log(cuttedEvents);
+
+                        //Forced to add the first two events because they contains webpage content (design, etc...).
+                        cuttedEvents.unshift(events[0], events[1]);
+
+                        //recompute first event timestamps
+                        cuttedEvents[0].timestamp = cuttedEvents[2].timestamp;
+                        cuttedEvents[1].timestamp = cuttedEvents[2].timestamp;
+
+                        console.log("Before adding 2 first");
+                        console.log(cuttedEvents);
+
                         console.log(audioBlob);
 
-                        console.log();
                         let startCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[0])], events[0]) % 60000) / 1000;
                         let endCut = (computeTimeBetweenTwoFrames(events[Math.floor(splittedValues[1])], events[0]) % 60000) / 1000;
 
@@ -148,10 +161,10 @@
 		                    let jsData = readTextFile("../lib/rrweb/dist/rrweb.min.js");
 		                    let cssData = readTextFile("../lib/rrweb/dist/rrweb.min.css");
 
-                            console.log(addslashes(JSON.stringify(events)));
-		                    let addEventsToFile = "let events_string = \"" + addslashes(JSON.stringify(events)) + '";';
+                            console.log(addslashes(JSON.stringify(cuttedEvents)));
+		                    let addEventsToFile = "let events_string = \"" + addslashes(JSON.stringify(cuttedEvents)) + '";';
 
-                            let eventBlob = new Blob([JSON.stringify(events)], {type: "application/json"});
+                            let eventBlob = new Blob([JSON.stringify(cuttedEvents)], {type: "application/json"});
 
 		                    textData += addEventsToFile + textDataEnd;
 	                    	zip.file("index.html", textData);
