@@ -89,7 +89,20 @@
 				
 				// Set correct volume level
 				audio.volume = document.getElementById('sliderBarSound').value / 10;
-				updateStatusSoundicon(document.getElementById('sliderBarSound').value);
+                updateStatusSoundicon(document.getElementById('sliderBarSound').value);
+                
+                // Set the scalability for the whole replayer
+                let screenDimension = {width: window.screen.width - 250, height: window.screen.height - 250};
+                let replayDimension = {width: events[0].data.width, height: events[0].data.height};
+
+                let scale = Math.min( 
+                    screenDimension.width / replayDimension.width, screenDimension.height / replayDimension.height);
+                    
+                document.getElementById("replayerAndControlDiv").style.transform = "scale(" + scale + ")";
+                
+                // Set the control bar the same size of the replayer
+                // This is a hacky way. We should be able to get size from rrweb
+                document.getElementById('sliderDiv').style.width = events[0].data.width + "px";
 			}
 
 			function computeSliderBar(value) {

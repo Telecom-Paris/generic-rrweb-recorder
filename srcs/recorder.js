@@ -163,14 +163,32 @@ let isEncodingOver = false;
 let lastButton;
 
 /**
- * 
+ * Contains the time in millis the user paused the record.
+ * For example, if the user pause the recorder for 3 sec then for 5 sec, the array will be [3000, 5000]
+ * @type {array} 
  */
 let pauseTimer = [];
+/**
+ * Contain the index of where the user stopped when pausing
+ * @type {array}
+ */
 let pauseTimerCheckPoint = [];
+/**
+ * A flag to detect if the recorder is in pause and the pause time counter is running
+ * @type {boolean}
+ */
 let isPauseTimerRunning = false;
+
+/**
+ * Contains the current time when the user pause the recorder
+ * @type {integer}
+ */
 let pauseStart = 0;
 
-
+/**
+ * Minimize Button Object
+ * @type {dom_element}
+ */
 let minimizeButton; 
 
 /**
@@ -427,7 +445,7 @@ function launchRecord() {
 
 				// Let's create the minimize button. as this is not a normal button, we cannot create it with 
 				// the button class
-				minimizeButton = createMinimizeButton();
+				minimizeButton = displayMinimizeButton();
 			}
 		});
 	}
@@ -491,6 +509,12 @@ function stopRecord() {
 	}
 }
 
+/**
+ * 
+ * @param {string} path The path of the external document 
+ * @param {boolean} isURL Is the path should be returned as url (for CSS rules)
+ * @returns Return the string with the right path
+ */
 function getRightLibPath(path, isURL) {
 	if (isURL) return "url(" + config.libPath + path + ")";
 	else return config.libPath + path;
@@ -552,7 +576,7 @@ function openMenu() {
  */
 function maximizeAllElements() {
 	if (isDragged == false) {
-		minimizeButton.style.backgroundImage = getRightLibPath('media/maximize32.png', true);
+		minimizeButton.style.backgroundImage = getRightLibPath('media/minimize32.png', true);
 		recordButton.show();
 		if (recorderState == "RECORDING") {
 			pauseButton.show();
@@ -569,6 +593,7 @@ function maximizeAllElements() {
  */
 function minimizeAllElements() {
 	if (isDragged == false) {
+		minimizeButton.style.backgroundImage = getRightLibPath('media/maximize32.png', true);
 		recordButton.hide();
 		if (recorderState == "RECORDING") {
 			pauseButton.hide();
@@ -584,7 +609,7 @@ function minimizeAllElements() {
  * This function create the minimize button.
  * @returns Return the button created
  */
-function createMinimizeButton() {
+function displayMinimizeButton() {
 	let button = document.createElement("input");
 	button.type = "button";
 	button.onclick = minimizeAllElements;
