@@ -424,6 +424,10 @@ function launchRecord() {
 
 				//Opening the menu to create
 				openMenu();
+
+				// Let's create the minimize button. as this is not a normal button, we cannot create it with 
+				// the button class
+				minimizeButton = createMinimizeButton();
 			}
 		});
 	}
@@ -540,29 +544,56 @@ function openMenu() {
 			changeMainDivSize(-80, 0);
 			isMenuOpen = false;
 		}
-		// Let's create the minimize button. as this is not a normal button, we cannot create it with 
-		// the button class
-		minimizeButton = createMinimizeButton();
 	}
 }
 
-function minimizeAllEements() {
-	recordButton.hide();
-	pauseButton.hide();
-	downButton.hide();
-	minimizeButton.onlick = maximizeAllEllements();
+/**
+ * Show the buttons depending on recorder state.
+ */
+function maximizeAllElements() {
+	if (isDragged == false) {
+		minimizeButton.style.backgroundImage = getRightLibPath('media/maximize32.png', true);
+		recordButton.show();
+		if (recorderState == "RECORDING") {
+			pauseButton.show();
+		} else if (recorderState == "STOPPED") {
+			postEdButton.show();
+			downButton.show();
+		}
+		minimizeButton.onclick = minimizeAllElements;
+	}
 }
 
+/**
+ * Hide the buttons depending on recorder state.
+ */
+function minimizeAllElements() {
+	if (isDragged == false) {
+		recordButton.hide();
+		if (recorderState == "RECORDING") {
+			pauseButton.hide();
+		} else if (recorderState == "STOPPED") {
+			postEdButton.hide();
+			downButton.hide();
+		}
+		minimizeButton.onclick = maximizeAllElements;
+	}
+}
+
+/**
+ * This function create the minimize button.
+ * @returns Return the button created
+ */
 function createMinimizeButton() {
-		let button = document.createElement("input");
-		button.type = "button";
-		//button.onclick = minimizeAllEements();
-		button.id = "rrweb-minimizeButton";
-		button.style.backgroundImage = getRightLibPath('media/minimize32.png', true);;
-		button.title = "Minimize the icons";
-		button.classList.add("rrweb-Buttons");
-		mainDiv.appendChild(button);
-		return button;
+	let button = document.createElement("input");
+	button.type = "button";
+	button.onclick = minimizeAllElements;
+	button.id = "rrweb-minimizeButton";
+	button.style.backgroundImage = getRightLibPath('media/minimize32.png', true);;
+	button.title = "Minimize the icons";
+	button.classList.add("rrweb-Buttons");
+	mainDiv.appendChild(button);
+	return button;
 }
 
 /**
