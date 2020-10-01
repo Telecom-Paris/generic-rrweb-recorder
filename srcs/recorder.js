@@ -347,7 +347,7 @@ function postEdit() {
 	localStorage.setItem('rrweb-audio', URL.createObjectURL(soundBlob));
 	console.log(localStorage.getItem('rrweb-events'));
 	console.log(localStorage.getItem('rrweb-audio'));
-	window.open(getRightLibPath("edit/newEdit.html"));
+	window.open(getRightLibPath("postEdit/newEdit.html"));
 }
 
 function displayPostEditButton() {
