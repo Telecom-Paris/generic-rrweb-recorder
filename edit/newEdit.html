@@ -38,6 +38,22 @@
                 color: white;
             }
             #sound-selector, #event-selector { visibility: hidden; }
+
+            #sliderBarSound {width: 40%; visibility: hidden;}
+
+            #soundBar:hover > #sliderBarSound { visibility: visible; }
+
+            .slider::-moz-range-thumb {cursor: pointer;}
+
+            .divButtonLeft {float: left;}
+
+            .divButtonRight {float: right;}
+
+            #controlBarLeft {float: left;}
+            #controlBarRight {float: right;}
+
+            #controlBarLeft, #controlBarRight { width: 50%;}
+
     </style>
   </head>
   <body onload="launchRrweb(false)">
@@ -49,12 +65,13 @@
         <input type="file" id="event-selector" accept=".json">
         <div id="postEditionWrapper">
             <div id="replayDiv"></div>
+            <br>
             <div id="timeline" style="position: relative;">
                 <div id="waveform"></div>
                 <div id="wave-timeline"></div>
                 <canvas id="eventBar" class="timeBarCanvas" width="1000" height="100" style="z-index: 2;"></canvas>
                 <canvas id="postEditBar" class="timeBarCanvas" width="1000" height="100" style="z-index: 3;"></canvas>
-                <br>
+                <br><br>
                 <div id = "controlBar">
                     <div id="controlBarLeft" style="width: 50%;float: left;">
                         <div class="divButtonLeft">
@@ -116,21 +133,25 @@
 
                     wavesurfer.loadBlob(audioBlob);
 
+                    let cursorCanvas = document.getElementById('eventBar');
+
                     console.log("Event per pixels is " +  events.length / cursorCanvas.width);
                     console.log("Event per pixels is " +  cursorCanvas.width / events.length);
 
-                    let eventSeconds = Math.floor(cursorCanvas.width / events.length);
+                    let eventSeconds = cursorCanvas.width / events.length;
 
-                    let cursorCanvas = document.getElementById('eventBar');
-                    var ctx = canvas.getContext("2d");
+                    var ctx = cursorCanvas.getContext("2d");
 
                     ctx.fillStyle = "#3399ff";
                 
-                    for (let i = 0 ; i < cursorCanvas.width; i += eventSeconds) {
-                        console.log("Je dessine a " + i);
-                        ctx.fillRect(i,0,1,100);
-                    }
+                    console.log(document.getElementById('replayDiv').offsetWidth + " / " + replay.getMetaData().totalTime + " = " + 
+                      document.getElementById('replayDiv').offsetWidth  / replay.getMetaData().totalTime);
 
+                    for (let k = 0; k < events.length; k++){
+                      i = document.getElementById('replayDiv').offsetWidth / replay.getMetaData().totalTime * (events[k].timestamp - events[0].timestamp);
+                      ctx.arc(i, 50, 5, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
                 }
             }
 
@@ -234,11 +255,19 @@
 
       document.querySelector('#slider').oninput = function () {
         wavesurfer.zoom(Number(this.value));
+        console.log("Zoom on the timebar");
       };
 
       function drawCursor(xAxe){
-        cursorCanvasData.ctx.drawImage(cursorIcon, xAxe - cursorCanvasData.size.left - cursorIconData.size.width,
+        console.log("Compute is: " + (xAxe - cursorCanvasData.size.left - cursorIconData.size.width) + "(" + xAxe + " "+ cursorCanvasData.size.left + " " + cursorIconData.size.width +")");
+        //cursorCanvasData.ctx.drawImage(cursorIcon, xAxe - cursorCanvasData.size.left - cursorIconData.size.width,
+        //  0, cursorIconData.size.width, 100);
+        cursorCanvasData.ctx.drawImage(cursorIcon, xAxe,
           0, cursorIconData.size.width, 100);
+      }
+
+      function setReplayerPos(cursorPos) {
+          console.log("Set replayer pos! ");
       }
 
       cursorCanvas.addEventListener('mousemove', function(event) {
@@ -261,13 +290,60 @@
           //Recompute cursor place
           cursorCanvasData.clear();
           drawCursor(event.clientX);
+          setReplayerPos(event.clientX);
         }
       }, false);
 
-    function clickPlayButton() {
-        console.log("Start playing record");
-    }
+      let playButtonStatus = "PAUSED";
 
+      let sliderbarValue = 0;
+    function clickPlayButton() {
+      if (playButtonStatus == "PAUSED") {
+                    playButtonStatus = "PLAYING";
+                    
+                    console.log("The replayer has started");
+                    
+                    // display pause Button
+                    document.getElementById('playButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M6 19h4V5H6v14zm8-14v14h4V5h-4z\"/></svg>";
+                    
+                    let totalTimeInSec = replay.getMetaData().totalTime;
+
+                    console.log(events.length + " / " + totalTimeInSec);
+                    let eventsPerSecond = (100 * document.getElementById('replayDiv').offsetWidth) / totalTimeInSec;
+                    
+                    console.log("TotalTimeInSec = " + totalTimeInSec);
+                    console.log(eventsPerSecond);
+
+                    interval = setInterval(function() {
+                            sliderbarValue += Math.ceil(eventsPerSecond);
+                            cursorCanvasData.clear();
+                            drawCursor(sliderbarValue);
+                            //console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
+                            //document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
+                    }, 100);
+                    
+                    replay.play();
+                    //replay.play(currentTime);
+                    audioDom.play();
+                } else if (playButtonStatus == "PLAYING") {
+                    playButtonStatus = "PAUSED";
+                    
+                    console.log("The replay has paused");
+                    
+                    currentTime = replay.getCurrentTime();
+                    
+                    // display play button
+                    document.getElementById('playButton').innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M8 5v14l11-7z\"/></svg>";
+                    
+                    clearInterval(interval);
+                    
+                    replay.pause();
+                    audioDom.pause();
+                    
+                    console.log("Replay time is " + replay.getCurrentTime() / 1000);
+					audioDom.currentTime = replay.getCurrentTime() / 1000;
+                }
+    }
     document.onkeypress = function(event) {
       console.log("ON KEY PRESS " + event.keyCode);
       switch (event.keyCode) {
@@ -320,6 +396,7 @@
         // Compute event position based on cursor position
         console.log("cursorCanvas width is " +  cursorCanvas.width);
         //console.log("Event per pixels is " +  eventPerPixels);
+        //replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
       }, false);
 
       cursorCanvas.addEventListener('mouseup', function(event) {
