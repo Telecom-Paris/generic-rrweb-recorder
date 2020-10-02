@@ -289,7 +289,7 @@ function loadScripts() {
 function resumeRecord(){
 	if (!isDragged) {
 		recorderState = "RECORDING";
-		pauseButton.style.backgroundImage = getRightLibPath('media/pause32.png', true);
+		pauseButton.style.backgroundImage = getRightLibPath('media/recorder/pause32.png', true);
 		document.getElementById('rrweb-pauseRecord').onclick = pauseRecord;
 
 		audioRecorder.startRecording();
@@ -324,7 +324,7 @@ function pauseRecord() {
 			isActive();
 		clearInterval(interval);
 
-		pauseButton.style.backgroundImage = getRightLibPath('media/resume32.png', true);
+		pauseButton.style.backgroundImage = getRightLibPath('media/recorder/resume32.png', true);
 		document.getElementById('rrweb-pauseRecord').onclick = resumeRecord;
 
 		console.log("I set in pause");
@@ -355,7 +355,7 @@ function displayPostEditButton() {
 	if (events.length > 2) {
 		changeMainDivSize(80, 0);
 		logger("I can download the page");
-		postEdButton = new Button(mainDiv, postEdit, "rrweb-postEdit", "Edit your record", 'media/edit32.png', recordButton);
+		postEdButton = new Button(mainDiv, postEdit, "rrweb-postEdit", "Edit your record", 'media/recorder/edit32.png', recordButton);
 		postEdButton.createChildButton();
 		postEdButton.show();
 	}
@@ -436,7 +436,7 @@ function launchRecord() {
 
 				// Update the style of record button and the onclick function.
 				recordButton.style.backgroundColor = "white";
-				recordButton.style.backgroundImage = getRightLibPath('media/recording32.png', true);
+				recordButton.style.backgroundImage = getRightLibPath('media/recorder/recording32.png', true);
 				recordButton.style.border = "1px solid black";
 				document.getElementById('rrweb-recordButton').onclick = stopRecord;
 
@@ -459,7 +459,7 @@ function stopRecord() {
 	if (!isDragged) {
 		recorderState = "STOPPED";
 		recordButton.style.backgroundColor = "#d92027";
-		recordButton.style.backgroundImage = getRightLibPath('media/camera32.png', true);
+		recordButton.style.backgroundImage = getRightLibPath('media/recorder/camera32.png', true);
 		recordButton.style.border = "none";
 		document.getElementById('rrweb-recordButton').onclick = launchRecord;
 
@@ -501,7 +501,7 @@ function stopRecord() {
 
 		if (isEncodingOver == false) {
 			//Display GIF loading
-			gifLoadingButton = new Button(mainDiv, null, "rrweb-loadingDown", "Your download is almost ready !", 'media/loading32.gif', recordButton);
+			gifLoadingButton = new Button(mainDiv, null, "rrweb-loadingDown", "Your download is almost ready !", 'media/recorder/loading32.gif', recordButton);
 			gifLoadingButton.createChildButton();
 			gifLoadingButton.setClickable(false);
 			gifLoadingButton.show();
@@ -524,7 +524,7 @@ function showDownButton() {
 	if (events.length > 2) {
 		changeMainDivSize(80, 0);
 		logger("I can download the page");
-		downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/down32.png', postEdButton);
+		downButton = new Button(mainDiv, downRecord, "rrweb-downRecord", "Download your record", 'media/recorder/down32.png', postEdButton);
 		downButton.createChildButton();
 		downButton.show();
 	}
@@ -558,7 +558,7 @@ function openMenu() {
 		if (!isMenuOpen) {
 			changeMainDivSize(80, 0);
 			if (!isPauseButtonCreated) {
-				pauseButton = new Button(mainDiv, pauseRecord, "rrweb-pauseRecord", "Pause the record", 'media/pause32.png', recordButton);
+				pauseButton = new Button(mainDiv, pauseRecord, "rrweb-pauseRecord", "Pause the record", 'media/recorder/pause32.png', recordButton);
 				isPauseButtonCreated = true;
 				pauseButton.createChildButton();
 			} else { pauseButton.show(); }
@@ -576,7 +576,7 @@ function openMenu() {
  */
 function maximizeAllElements() {
 	if (isDragged == false) {
-		minimizeButton.style.backgroundImage = getRightLibPath('media/minimize32.png', true);
+		minimizeButton.style.backgroundImage = getRightLibPath('media/recorder/minimize32.png', true);
 		recordButton.show();
 		if (recorderState == "RECORDING") {
 			pauseButton.show();
@@ -593,7 +593,7 @@ function maximizeAllElements() {
  */
 function minimizeAllElements() {
 	if (isDragged == false) {
-		minimizeButton.style.backgroundImage = getRightLibPath('media/maximize32.png', true);
+		minimizeButton.style.backgroundImage = getRightLibPath('media/recorder/maximize32.png', true);
 		recordButton.hide();
 		if (recorderState == "RECORDING") {
 			pauseButton.hide();
@@ -614,7 +614,7 @@ function displayMinimizeButton() {
 	button.type = "button";
 	button.onclick = minimizeAllElements;
 	button.id = "rrweb-minimizeButton";
-	button.style.backgroundImage = getRightLibPath('media/minimize32.png', true);;
+	button.style.backgroundImage = getRightLibPath('media/recorder/minimize32.png', true);;
 	button.title = "Minimize the icons";
 	button.classList.add("rrweb-Buttons");
 	mainDiv.appendChild(button);
@@ -859,10 +859,10 @@ class Recorder {
 		mainDiv = createBaseDiv("rrweb-mainDivButton");
 
 		// We load CSS
-		loadCss(getRightLibPath("media/style.css", false));
+		loadCss(getRightLibPath("media/recorder/style.css", false));
 
 		// We define a button that will launch recording
-		recordButton = new Button(mainDiv, loadScripts, "rrweb-recordButton", "Start recording! ",'media/camera32.png', null);
+		recordButton = new Button(mainDiv, loadScripts, "rrweb-recordButton", "Start recording! ",'media/recorder/camera32.png', null);
 		recordButton.createMenuButton();
 
 		buttonPosition(mainDiv);
