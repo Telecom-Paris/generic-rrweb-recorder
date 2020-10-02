@@ -22,7 +22,8 @@ let eventCanvasData = {
 let cursorIcon = new Image();
 cursorIcon.src = "../media/postEdit/postEditBar.png";
 let cursorIconData = {
-    size: { width: 5 }
+    size: { width: 5 },
+    position: 0
 }
 
 let deleteIcon = new Image();
@@ -52,6 +53,8 @@ let svgButton = {
     mediumSound: "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z\"/></svg>",
     largeSound: "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z\"/></svg>"
 };
+
+let eventMap = [];
 
 async function launchRrweb(manualLoad) {
     // Loading data
@@ -114,8 +117,9 @@ async function launchRrweb(manualLoad) {
         // Draw event point on canvas considering their timestamps
         let i;
         eventCanvasData.ctx.fillStyle = "#3399ff";
-        for (let k = 0; k < events.length; k++){
-            i = replayDivSize / replay.getMetaData().totalTime * (events[k].timestamp - events[0].timestamp);
+        for (let k = 0; k < events.length; k++) {
+            i = Math.round(replayDivSize / replay.getMetaData().totalTime * (events[k].timestamp - events[0].timestamp));
+            eventMap.push(i);
             eventCanvasData.ctx.arc(i, 50, 5, 0, 2 * Math.PI);
             eventCanvasData.ctx.fill();
         }
@@ -172,45 +176,18 @@ function loadEventsFromUser() {
     }
 }
 
-
-
 function drawCursor(xAxe) {
     console.log("Compute is: " + (xAxe - cursorCanvasData.size.left - cursorIconData.size.width) + "(" + xAxe + " "+ cursorCanvasData.size.left + " " + cursorIconData.size.width +")");
     cursorCanvasData.ctx.drawImage(cursorIcon, xAxe - cursorCanvasData.size.left - cursorIconData.size.width,
         0, cursorIconData.size.width, 100);
-    //cursorCanvasData.ctx.drawImage(cursorIcon, xAxe,
-    //  0, cursorIconData.size.width, 100);
+    cursorIconData.position = cursorIcon, xAxe - cursorCanvasData.size.left - cursorIconData.size.width;
 }
 
-function setReplayerPos(cursorPos) {
+function setReplayerPos(arrayIndex) {
     console.log("Set replayer pos! ");
+    replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
 }
 
-cursorCanvas.addEventListener('mousemove', function(event) {
-    if (isMouseDown && isShiftPressed) {
-        console.log("IsMouseDown is true");
-        cursorCanvasData.clear();
-
-          // draw rectangle
-        cursorCanvasData.ctx.globalAlpha = 0.3; // set global alpha (transparency)
-        cursorCanvasData.ctx.beginPath();
-          
-        cursorCanvasData.ctx.rect(startPosition, 0, event.clientX - cursorCanvasData.size.left - startPosition, 100);
-        endPosition = event.clientX - cursorCanvasData.size.left - startPosition;
-        cursorCanvasData.ctx.fillStyle = "#3399ff";
-        cursorCanvasData.ctx.fill();
-    }
-    else if (isMouseDown) {
-        startPosition = event.clientX - cursorCanvasData.size.left;
-
-        //Recompute cursor place
-        cursorCanvasData.clear();
-        drawCursor(event.clientX);
-        setReplayerPos(event.clientX);
-    }
-}, false);
-
-    
 function clickPlayButton() {
     if (playButtonStatus == "PAUSED") {
         playButtonStatus = "PLAYING";
@@ -273,11 +250,19 @@ function setListeners() {
                     eventCanvasData.ctx.drawImage(deleteIcon, startPosition, 0, endPosition, 100);
                 }
                 break;
+            case 39: // Right arrow
+                console.log("I should draw cursor");
+                drawCursor(cursorIconData.position + 1);
+                break;
+            case 37: // Left arrow
+                console.log("I should draw cursor");
+                drawCursor(cursorIconData.position - 1);
+                break;
         }
     };
 
     document.onkeydown = function(event) {
-        console.log(event.keyCode);
+        console.log("onkeydown " + event.keyCode);
         switch (event.keyCode) {
             case 16: // Shift key, used for selection
                 isShiftPressed = true;
@@ -287,7 +272,7 @@ function setListeners() {
     };
 
     document.onkeyup = function(event) {
-        switch (event.keyCode) {
+        switch ("onkeyup " + event.keyCode) {
             case 16:
                 isShiftPressed = false;
                 console.log('SHIFT key released');
@@ -306,7 +291,11 @@ function setListeners() {
         drawCursor(event.clientX);
 
         // Compute event position based on cursor position
-        console.log("cursorCanvas width is " +  cursorCanvas.width);
+        console.log("cursor pointer position is " +  startPosition);
+        console.log(eventMap);
+        if (eventMap.includes(startPosition)) {
+            console.log("je suis sur un element ! a l'index:" + eventMap.indexOf(startPosition));
+        }
         //console.log("Event per pixels is " +  eventPerPixels);
         //replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
     }, false);
@@ -316,6 +305,33 @@ function setListeners() {
         cursorCanvasData.ctx.globalAlpha = 1.0;
 
         //drawCursor(event.clientX);
+    }, false);
+
+    cursorCanvas.addEventListener('mousemove', function(event) {
+        if (isMouseDown && isShiftPressed) {
+            console.log("IsMouseDown is true");
+            cursorCanvasData.clear();
+    
+            // draw rectangle
+            cursorCanvasData.ctx.globalAlpha = 0.3; // set global alpha (transparency)
+            cursorCanvasData.ctx.beginPath();
+              
+            cursorCanvasData.ctx.rect(startPosition, 0, event.clientX - cursorCanvasData.size.left - startPosition, 100);
+            endPosition = event.clientX - cursorCanvasData.size.left - startPosition;
+            cursorCanvasData.ctx.fillStyle = "#3399ff";
+            cursorCanvasData.ctx.fill();
+        }
+        else if (isMouseDown) {
+            startPosition = event.clientX - cursorCanvasData.size.left;
+    
+            //Recompute cursor place
+            cursorCanvasData.clear();
+            drawCursor(event.clientX);
+            if (eventMap.includes(startPosition)) {
+                console.log("je suis sur un element ! a l'index:" + eventMap.indexOf(startPosition));
+                setReplayerPos(eventMap.indexOf(startPosition));
+            }
+        }
     }, false);
 
     document.querySelector('#slider').oninput = function () {
