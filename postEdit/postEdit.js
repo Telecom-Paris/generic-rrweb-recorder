@@ -56,6 +56,15 @@ let svgButton = {
 
 let eventMap = [];
 
+let userSelectionMap = [];
+
+let userOnSelection = {
+    isOnSelection: false,
+    index: 0
+};
+
+let isSelectionOverExisting = false;
+
 async function launchRrweb(manualLoad) {
     // Loading data
     if (manualLoad == false) {
@@ -235,32 +244,10 @@ function clickPlayButton() {
 		audioDom.currentTime = replay.getCurrentTime() / 1000;
     }
 }
+
+let positionCursor = -1;
+
 function setListeners() {
-    document.onkeypress = function(event) {
-        console.log("ON KEY PRESS " + event.keyCode);
-        switch (event.keyCode) {
-            case 100: // 'd' key
-                console.log("D key has been pressed");
-                console.log(startPosition + "/" + endPosition);
-
-                if (startPosition > -1 && endPosition > 0) {
-                    //Recompute cursor place
-                    cursorCanvasData.clear();
-                    drawCursor(event.clientX);
-                    eventCanvasData.ctx.drawImage(deleteIcon, startPosition, 0, endPosition, 100);
-                }
-                break;
-            case 39: // Right arrow
-                console.log("I should draw cursor");
-                drawCursor(cursorIconData.position + 1);
-                break;
-            case 37: // Left arrow
-                console.log("I should draw cursor");
-                drawCursor(cursorIconData.position - 1);
-                break;
-        }
-    };
-
     document.onkeydown = function(event) {
         console.log("onkeydown " + event.keyCode);
         switch (event.keyCode) {
@@ -272,15 +259,47 @@ function setListeners() {
     };
 
     document.onkeyup = function(event) {
-        switch ("onkeyup " + event.keyCode) {
+        console.log("onkeyup " + event.keyCode);
+        switch (event.keyCode) {
             case 16:
                 isShiftPressed = false;
                 console.log('SHIFT key released');
                 break;
+            case 68: // 'd' key
+                console.log("D key has been pressed");
+                console.log(startPosition + "/" + endPosition);
+
+                userSelectionMap.forEach(function(item) {
+                    console.log("Iterating with positions: %d > %d / %d < %d", startPosition, item.startPosition, endPosition, item.endPosition);
+                    if (startPosition >= item.startPosition && endPosition <= item.endPosition) {
+                        console.log("Setting isSelectionOverExisting to true");
+                        isSelectionOverExisting = true;
+                    }
+                });
+
+                cursorCanvasData.clear();
+                drawCursor(event.clientX);
+
+                console.log("startPosition %d, endPosition %d, isSelectionOverExisting %d", startPosition, endPosition, isSelectionOverExisting);
+                if (startPosition > -1 && endPosition > 0 && !isSelectionOverExisting) {
+                    //Recompute cursor place
+                    console.log("I place the delete icon");
+                    eventCanvasData.ctx.drawImage(deleteIcon, startPosition, 0, endPosition - startPosition, 100);
+                    userSelectionMap.push({startPosition, endPosition, size: endPosition - startPosition});
+                    console.log(userSelectionMap);
+                }
+                isSelectionOverExisting = false;
+                break;
+            case 39: // Right arrow
+                console.log("I should draw cursor");
+                drawCursor(cursorIconData.position + 1);
+                break;
+            case 37: // Left arrow
+                console.log("I should draw cursor");
+                drawCursor(cursorIconData.position - 1);
+                break;
         }
     };
-
-    //let eventPerPixels = events.length / cursorCanvas.width;
 
     cursorCanvas.addEventListener('mousedown', function(event) {
         isMouseDown = true;
@@ -303,7 +322,7 @@ function setListeners() {
     cursorCanvas.addEventListener('mouseup', function(event) {
         isMouseDown = false;
         cursorCanvasData.ctx.globalAlpha = 1.0;
-
+        positionCursor = -1;
         //drawCursor(event.clientX);
     }, false);
 
@@ -317,11 +336,26 @@ function setListeners() {
             cursorCanvasData.ctx.beginPath();
               
             cursorCanvasData.ctx.rect(startPosition, 0, event.clientX - cursorCanvasData.size.left - startPosition, 100);
-            endPosition = event.clientX - cursorCanvasData.size.left - startPosition;
+            endPosition = event.clientX - cursorCanvasData.size.left;
             cursorCanvasData.ctx.fillStyle = "#3399ff";
             cursorCanvasData.ctx.fill();
         }
-        else if (isMouseDown) {
+        else if (isMouseDown && userOnSelection.isOnSelection) {
+            if (positionCursor < 0)
+                positionCursor = event.clientX - userSelectionMap[userOnSelection.index].startPosition;
+            //console.log("Old position of element %d is : startPosition: %d, endPosition: %d ", userOnSelection.index, userSelectionMap[userOnSelection.index].startPosition, userSelectionMap[userOnSelection.index].endPosition);
+            //console.log("Cursor position %d - (%d - %d) = %d", event.clientX, event.clientX, userSelectionMap[userOnSelection.index].startPosition, event.clientX - (event.clientX - userSelectionMap[userOnSelection.index].startPosition));
+            //console.log("Cursor position %d - %d = %d", event.clientX, positionCursor, event.clientX - positionCursor);
+            userSelectionMap[userOnSelection.index].startPosition = event.clientX - positionCursor;
+            userSelectionMap[userOnSelection.index].endPosition = userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size;
+
+            eventCanvasData.clear();
+            userSelectionMap.forEach(function(item, index) {
+                //console.log("Je redessine l'element %d entre les positions %d -> %d", index, item.startPosition, item.endPosition);
+                eventCanvasData.ctx.drawImage(deleteIcon, item.startPosition, 0, item.size, 100);
+            });
+
+        } else if (isMouseDown) {
             startPosition = event.clientX - cursorCanvasData.size.left;
     
             //Recompute cursor place
@@ -330,6 +364,25 @@ function setListeners() {
             if (eventMap.includes(startPosition)) {
                 console.log("je suis sur un element ! a l'index:" + eventMap.indexOf(startPosition));
                 setReplayerPos(eventMap.indexOf(startPosition));
+            }
+        } else {
+            console.log("position of X mouse is " + event.clientX);
+            console.log(userSelectionMap);
+
+            for (let i = 0; i < userSelectionMap.length; i++){
+                console.log("je suis sur l'index: %d", i);
+                console.log("Iterating with positions: %d > %d / %d < %d", event.clientX, userSelectionMap[i].startPosition, event.clientX, userSelectionMap[i].endPosition);
+                if (event.clientX >= userSelectionMap[i].startPosition + 20 && event.clientX <= userSelectionMap[i].endPosition - 20) {
+                    cursorCanvas.style.cursor = "all-scroll";
+                    userOnSelection.isOnSelection = true;
+                    userOnSelection.index = i;
+                    console.log("Ahah c marrant");
+                    break;
+                } else {
+                    cursorCanvas.style.cursor = "pointer";
+                    userOnSelection.isOnSelection = false;
+                    console.log("ahah c PAS marrant");
+                }
             }
         }
     }, false);
