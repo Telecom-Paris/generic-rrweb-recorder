@@ -54,6 +54,8 @@ let replayDivSize;
 
 let wavesurfer;
 
+let cursorPosition = 0;
+
 let svgButton = {
     play: "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M8 5v14l11-7z\"/></svg>",
     pause: "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M6 19h4V5H6v14zm8-14v14h4V5h-4z\"/></svg>",
@@ -203,6 +205,14 @@ function drawCursor(xAxe) {
     cursorIconData.position = xAxe - cursorCanvasData.size.left - cursorIconData.size.width;
 }
 
+function drawUserSelections() {
+    eventCanvasData.clear();
+    userSelectionMap.forEach(function(item, index) {
+        //console.log("Je redessine l'element %d entre les positions %d -> %d", index, item.startPosition, item.endPosition);
+        eventCanvasData.ctx.drawImage(deleteIcon, item.startPosition, 0, item.size, 100);
+    });
+}
+
 function setReplayerPos(arrayIndex) {
     console.log("Set replayer pos! ");
     replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
@@ -290,13 +300,14 @@ function setListeners() {
                 console.log("D key has been pressed");
                 console.log(startPosition + "/" + endPosition);
 
-                userSelectionMap.forEach(function(item) {
-                    console.log("Iterating with positions: %d > %d / %d < %d", startPosition, item.startPosition, endPosition, item.endPosition);
-                    if (startPosition >= item.startPosition && endPosition <= item.endPosition) {
+                for (let k = 0; k < userSelectionMap.length; k++) {
+                    console.log("Iterating with positions: %d > %d / %d < %d", startPosition, userSelectionMap[k].startPosition, endPosition, userSelectionMap[k].endPosition);
+                    if (startPosition >= userSelectionMap[k].startPosition && endPosition <= userSelectionMap[k].endPosition) {
                         console.log("Setting isSelectionOverExisting to true");
                         isSelectionOverExisting = true;
+                        break;
                     }
-                });
+                }
 
                 cursorCanvasData.clear();
                 drawCursor(event.clientX);
@@ -310,6 +321,23 @@ function setListeners() {
                     console.log(userSelectionMap);
                 }
                 isSelectionOverExisting = false;
+                break;
+
+            case 83: // 's' key
+                // We detect if the mouse is over a selection
+                console.log("Delete key detected");
+                for (let i = 0; i < userSelectionMap.length; i++){
+                    console.log("iterating over i = %d", i);
+                    console.log("Iterating with positions: %d > %d / %d < %d", cursorPosition, userSelectionMap[i].startPosition, event.clientX, userSelectionMap[i].endPosition);
+                    if (cursorPosition >= userSelectionMap[i].startPosition && cursorPosition <= userSelectionMap[i].endPosition) {
+                        console.log("We are over element %d, deleting it", i);
+                        userSelectionMap.splice(i, 1);
+                        drawUserSelections();
+                        userOnSelection.isOnSelection = null;
+                        cursorCanvas.style.cursor = "pointer";
+                        break;
+                    }
+                }
                 break;
         }
     };
@@ -336,7 +364,6 @@ function setListeners() {
         isMouseDown = false;
         cursorCanvasData.ctx.globalAlpha = 1.0;
         positionCursor = -1;
-        //drawCursor(event.clientX);
     }, false);
 
     cursorCanvas.addEventListener('mousemove', function(event) {
@@ -364,11 +391,7 @@ function setListeners() {
             
             userSelectionMap[userOnSelection.index].endPosition = userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size;
 
-            eventCanvasData.clear();
-            userSelectionMap.forEach(function(item, index) {
-                //console.log("Je redessine l'element %d entre les positions %d -> %d", index, item.startPosition, item.endPosition);
-                eventCanvasData.ctx.drawImage(deleteIcon, item.startPosition, 0, item.size, 100);
-            });
+            drawUserSelections();
         } else if (isMouseDown && userOnSelection.isOnSelection == "resize") {
                 if (userOnSelection.resizePoint == "start") {
                     userSelectionMap[userOnSelection.index].startPosition = event.clientX;
@@ -381,11 +404,7 @@ function setListeners() {
                 if (userSelectionMap[userOnSelection.index].size < 10)
                 userSelectionMap[userOnSelection.index].size = 10;
 
-                eventCanvasData.clear();
-                userSelectionMap.forEach(function(item, index) {
-                    //console.log("Je redessine l'element %d entre les positions %d -> %d", index, item.startPosition, item.endPosition);
-                    eventCanvasData.ctx.drawImage(deleteIcon, item.startPosition, 0, item.size, 100);
-                });
+                drawUserSelections();
         } else if (isMouseDown) {
             startPosition = event.clientX - cursorCanvasData.size.left;
     
@@ -398,6 +417,7 @@ function setListeners() {
             }
         } else {
             console.log("position of X mouse is " + event.clientX);
+            cursorPosition = event.clientX;
             console.log(userSelectionMap);
 
             for (let i = 0; i < userSelectionMap.length; i++){
@@ -417,12 +437,10 @@ function setListeners() {
                         userOnSelection.isOnSelection = "move";
                     }
                     userOnSelection.index = i;
-                    console.log("Ahah c marrant");
                     break;
                 } else {
                     cursorCanvas.style.cursor = "pointer";
                     userOnSelection.isOnSelection = false;
-                    console.log("ahah c PAS marrant");
                 }
             }
         }
