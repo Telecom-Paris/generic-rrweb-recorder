@@ -10,7 +10,16 @@ let cursorCanvasData = {
     }
 };
 
-const eventCanvas = document.getElementById('eventBar');
+let eventPointCanvas = document.getElementById('eventPointBar');
+let eventPointCanvasData = {
+    ctx:  eventPointCanvas.getContext('2d'),
+    size: eventPointCanvas.getBoundingClientRect(),
+    clear: function() {
+        this.ctx.clearRect(0, 0, eventPointCanvas.width, eventPointCanvas.height);
+    }
+};
+
+let eventCanvas = document.getElementById('eventBar');
 let eventCanvasData = {
     ctx:  eventCanvas.getContext('2d'),
     size: eventCanvas.getBoundingClientRect(),
@@ -54,7 +63,7 @@ let svgButton = {
     largeSound: "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" width=\"24\"><path d=\"M0 0h24v24H0z\" fill=\"none\"/><path d=\"M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z\"/></svg>"
 };
 
-let eventMap = [];
+let eventPointMap = [];
 
 let userSelectionMap = [];
 
@@ -90,6 +99,7 @@ async function launchRrweb(manualLoad) {
         replayDivSize = document.getElementById('replayDiv').offsetWidth;
 
         document.getElementById('eventBar').width = replayDivSize;
+        document.getElementById('eventPointBar').width = replayDivSize;
         document.getElementById('postEditBar').width = replayDivSize;
         document.getElementById('waveform').style.width = replayDivSize + "px";
         document.getElementById('wave-timeline').style.width = replayDivSize + "px";
@@ -125,12 +135,12 @@ async function launchRrweb(manualLoad) {
 
         // Draw event point on canvas considering their timestamps
         let i;
-        eventCanvasData.ctx.fillStyle = "#3399ff";
+        eventPointCanvasData.ctx.fillStyle = "#3399ff";
         for (let k = 0; k < events.length; k++) {
             i = Math.round(replayDivSize / replay.getMetaData().totalTime * (events[k].timestamp - events[0].timestamp));
-            eventMap.push(i);
-            eventCanvasData.ctx.arc(i, 50, 5, 0, 2 * Math.PI);
-            eventCanvasData.ctx.fill();
+            eventPointMap.push(i);
+            eventPointCanvasData.ctx.arc(i, 50, 5, 0, 2 * Math.PI);
+            eventPointCanvasData.ctx.fill();
         }
 
         // Listen for events
@@ -311,9 +321,9 @@ function setListeners() {
 
         // Compute event position based on cursor position
         console.log("cursor pointer position is " +  startPosition);
-        console.log(eventMap);
-        if (eventMap.includes(startPosition)) {
-            console.log("je suis sur un element ! a l'index:" + eventMap.indexOf(startPosition));
+        console.log(eventPointMap);
+        if (eventPointMap.includes(startPosition)) {
+            console.log("je suis sur un element ! a l'index:" + eventPointMap.indexOf(startPosition));
         }
         //console.log("Event per pixels is " +  eventPerPixels);
         //replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
@@ -343,10 +353,13 @@ function setListeners() {
         else if (isMouseDown && userOnSelection.isOnSelection) {
             if (positionCursor < 0)
                 positionCursor = event.clientX - userSelectionMap[userOnSelection.index].startPosition;
-            //console.log("Old position of element %d is : startPosition: %d, endPosition: %d ", userOnSelection.index, userSelectionMap[userOnSelection.index].startPosition, userSelectionMap[userOnSelection.index].endPosition);
-            //console.log("Cursor position %d - (%d - %d) = %d", event.clientX, event.clientX, userSelectionMap[userOnSelection.index].startPosition, event.clientX - (event.clientX - userSelectionMap[userOnSelection.index].startPosition));
-            //console.log("Cursor position %d - %d = %d", event.clientX, positionCursor, event.clientX - positionCursor);
             userSelectionMap[userOnSelection.index].startPosition = event.clientX - positionCursor;
+            // Limit the movement to the size of canvas only
+            if (userSelectionMap[userOnSelection.index].startPosition < 0){
+                userSelectionMap[userOnSelection.index].startPosition = 0;
+            }
+            if (userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size > document.getElementById('eventBar').width)
+                userSelectionMap[userOnSelection.index].startPosition = document.getElementById('eventBar').width - userSelectionMap[userOnSelection.index].size; 
             userSelectionMap[userOnSelection.index].endPosition = userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size;
 
             eventCanvasData.clear();
@@ -354,16 +367,15 @@ function setListeners() {
                 //console.log("Je redessine l'element %d entre les positions %d -> %d", index, item.startPosition, item.endPosition);
                 eventCanvasData.ctx.drawImage(deleteIcon, item.startPosition, 0, item.size, 100);
             });
-
         } else if (isMouseDown) {
             startPosition = event.clientX - cursorCanvasData.size.left;
     
             //Recompute cursor place
             cursorCanvasData.clear();
             drawCursor(event.clientX);
-            if (eventMap.includes(startPosition)) {
-                console.log("je suis sur un element ! a l'index:" + eventMap.indexOf(startPosition));
-                setReplayerPos(eventMap.indexOf(startPosition));
+            if (eventPointMap.includes(startPosition)) {
+                console.log("je suis sur un element ! a l'index:" + eventPointMap.indexOf(startPosition));
+                setReplayerPos(eventPointMap.indexOf(startPosition));
             }
         } else {
             console.log("position of X mouse is " + event.clientX);
