@@ -68,7 +68,8 @@ let eventPointMap = [];
 let userSelectionMap = [];
 
 let userOnSelection = {
-    isOnSelection: false,
+    isOnSelection: null,
+    resizePoint: null,
     index: 0
 };
 
@@ -199,7 +200,7 @@ function drawCursor(xAxe) {
     console.log("Compute is: " + (xAxe - cursorCanvasData.size.left - cursorIconData.size.width) + "(" + xAxe + " "+ cursorCanvasData.size.left + " " + cursorIconData.size.width +")");
     cursorCanvasData.ctx.drawImage(cursorIcon, xAxe - cursorCanvasData.size.left - cursorIconData.size.width,
         0, cursorIconData.size.width, 100);
-    cursorIconData.position = cursorIcon, xAxe - cursorCanvasData.size.left - cursorIconData.size.width;
+    cursorIconData.position = xAxe - cursorCanvasData.size.left - cursorIconData.size.width;
 }
 
 function setReplayerPos(arrayIndex) {
@@ -265,6 +266,16 @@ function setListeners() {
                 isShiftPressed = true;
                 console.log('SHIFT key pressed');
                 break;
+            case 39: // Right arrow
+                cursorCanvasData.clear();
+                console.log("I should draw cursor");
+                drawCursor(cursorIconData.position + 1);
+                break;
+            case 37: // Left arrow
+                cursorCanvasData.clear();
+                console.log("I should draw cursor");
+                drawCursor(cursorIconData.position - 1);
+                break;
         }
     };
 
@@ -299,14 +310,6 @@ function setListeners() {
                     console.log(userSelectionMap);
                 }
                 isSelectionOverExisting = false;
-                break;
-            case 39: // Right arrow
-                console.log("I should draw cursor");
-                drawCursor(cursorIconData.position + 1);
-                break;
-            case 37: // Left arrow
-                console.log("I should draw cursor");
-                drawCursor(cursorIconData.position - 1);
                 break;
         }
     };
@@ -349,17 +352,16 @@ function setListeners() {
             endPosition = event.clientX - cursorCanvasData.size.left;
             cursorCanvasData.ctx.fillStyle = "#3399ff";
             cursorCanvasData.ctx.fill();
-        }
-        else if (isMouseDown && userOnSelection.isOnSelection) {
+        } else if (isMouseDown && userOnSelection.isOnSelection == "move") {
             if (positionCursor < 0)
                 positionCursor = event.clientX - userSelectionMap[userOnSelection.index].startPosition;
             userSelectionMap[userOnSelection.index].startPosition = event.clientX - positionCursor;
+            
             // Limit the movement to the size of canvas only
-            if (userSelectionMap[userOnSelection.index].startPosition < 0){
-                userSelectionMap[userOnSelection.index].startPosition = 0;
-            }
+            if (userSelectionMap[userOnSelection.index].startPosition < 0) userSelectionMap[userOnSelection.index].startPosition = 0;
             if (userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size > document.getElementById('eventBar').width)
                 userSelectionMap[userOnSelection.index].startPosition = document.getElementById('eventBar').width - userSelectionMap[userOnSelection.index].size; 
+            
             userSelectionMap[userOnSelection.index].endPosition = userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size;
 
             eventCanvasData.clear();
@@ -367,6 +369,23 @@ function setListeners() {
                 //console.log("Je redessine l'element %d entre les positions %d -> %d", index, item.startPosition, item.endPosition);
                 eventCanvasData.ctx.drawImage(deleteIcon, item.startPosition, 0, item.size, 100);
             });
+        } else if (isMouseDown && userOnSelection.isOnSelection == "resize") {
+                if (userOnSelection.resizePoint == "start") {
+                    userSelectionMap[userOnSelection.index].startPosition = event.clientX;
+                    userSelectionMap[userOnSelection.index].size = userSelectionMap[userOnSelection.index].endPosition - event.clientX;
+                } else if (userOnSelection.resizePoint == "end"){
+                    userSelectionMap[userOnSelection.index].endPosition = event.clientX;
+                    userSelectionMap[userOnSelection.index].size = event.clientX - userSelectionMap[userOnSelection.index].startPosition;
+                }  
+
+                if (userSelectionMap[userOnSelection.index].size < 10)
+                userSelectionMap[userOnSelection.index].size = 10;
+
+                eventCanvasData.clear();
+                userSelectionMap.forEach(function(item, index) {
+                    //console.log("Je redessine l'element %d entre les positions %d -> %d", index, item.startPosition, item.endPosition);
+                    eventCanvasData.ctx.drawImage(deleteIcon, item.startPosition, 0, item.size, 100);
+                });
         } else if (isMouseDown) {
             startPosition = event.clientX - cursorCanvasData.size.left;
     
@@ -384,9 +403,19 @@ function setListeners() {
             for (let i = 0; i < userSelectionMap.length; i++){
                 console.log("je suis sur l'index: %d", i);
                 console.log("Iterating with positions: %d > %d / %d < %d", event.clientX, userSelectionMap[i].startPosition, event.clientX, userSelectionMap[i].endPosition);
-                if (event.clientX >= userSelectionMap[i].startPosition + 20 && event.clientX <= userSelectionMap[i].endPosition - 20) {
-                    cursorCanvas.style.cursor = "all-scroll";
-                    userOnSelection.isOnSelection = true;
+                if (event.clientX >= userSelectionMap[i].startPosition && event.clientX <= userSelectionMap[i].endPosition) {
+                    if (event.clientX <= userSelectionMap[i].startPosition + 20) {
+                        cursorCanvas.style.cursor = "ew-resize";
+                        userOnSelection.isOnSelection = "resize";
+                        userOnSelection.resizePoint = "start";
+                    } else if (event.clientX >= userSelectionMap[i].endPosition - 20) {
+                        cursorCanvas.style.cursor = "ew-resize";
+                        userOnSelection.isOnSelection = "resize";
+                        userOnSelection.resizePoint = "end";
+                    } else {
+                        cursorCanvas.style.cursor = "all-scroll";
+                        userOnSelection.isOnSelection = "move";
+                    }
                     userOnSelection.index = i;
                     console.log("Ahah c marrant");
                     break;
