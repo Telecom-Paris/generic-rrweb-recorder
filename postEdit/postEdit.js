@@ -32,6 +32,7 @@ let cursorIcon = new Image();
 cursorIcon.src = "../media/postEdit/postEditBar.png";
 let cursorIconData = {
     size: { width: 5 },
+    realPosition: 0,
     position: 0
 }
 
@@ -199,22 +200,22 @@ function loadEventsFromUser() {
 }
 
 function drawCursor(xAxe) {
-    console.log("Compute is: " + (xAxe - cursorCanvasData.size.left - cursorIconData.size.width) + "(" + xAxe + " "+ cursorCanvasData.size.left + " " + cursorIconData.size.width +")");
-    cursorCanvasData.ctx.drawImage(cursorIcon, xAxe - cursorCanvasData.size.left - cursorIconData.size.width,
-        0, cursorIconData.size.width, 100);
+    cursorCanvasData.clear();
     cursorIconData.position = xAxe - cursorCanvasData.size.left - cursorIconData.size.width;
+    if (cursorIconData.position < 0) { cursorIconData.position = 0; }
+    cursorCanvasData.ctx.drawImage(cursorIcon, cursorIconData.position, 0, cursorIconData.size.width, 100);
+    cursorIconData.realPosition = xAxe;
 }
 
 function drawUserSelections() {
     eventCanvasData.clear();
     userSelectionMap.forEach(function(item, index) {
-        //console.log("Je redessine l'element %d entre les positions %d -> %d", index, item.startPosition, item.endPosition);
         eventCanvasData.ctx.drawImage(deleteIcon, item.startPosition, 0, item.size, 100);
     });
 }
 
 function setReplayerPos(arrayIndex) {
-    console.log("Set replayer pos! ");
+    //console.log("Set replayer pos! ");
     replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
 }
 
@@ -237,7 +238,6 @@ function clickPlayButton() {
 
         interval = setInterval(function() {
                 sliderbarValue += Math.ceil(eventsPerSecond);
-                cursorCanvasData.clear();
                 drawCursor(sliderbarValue);
                 //console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
                 //document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
@@ -277,14 +277,17 @@ function setListeners() {
                 console.log('SHIFT key pressed');
                 break;
             case 39: // Right arrow
-                cursorCanvasData.clear();
-                console.log("I should draw cursor");
-                drawCursor(cursorIconData.position + 1);
+                drawCursor(cursorIconData.realPosition + 1);
+                if (eventPointMap.includes(cursorIconData.realPosition - cursorCanvasData.size.left)) {
+                    setReplayerPos(eventPointMap.indexOf(cursorIconData.realPosition - cursorCanvasData.size.left));
+                }
                 break;
             case 37: // Left arrow
-                cursorCanvasData.clear();
-                console.log("I should draw cursor");
-                drawCursor(cursorIconData.position - 1);
+               
+                drawCursor(cursorIconData.realPosition - 1);
+                if (eventPointMap.includes(cursorIconData.realPosition - cursorCanvasData.size.left)) {
+                    setReplayerPos(eventPointMap.indexOf(cursorIconData.realPosition - cursorCanvasData.size.left));
+                }
                 break;
         }
     };
@@ -309,12 +312,10 @@ function setListeners() {
                     }
                 }
 
-                cursorCanvasData.clear();
                 drawCursor(event.clientX);
 
                 console.log("startPosition %d, endPosition %d, isSelectionOverExisting %d", startPosition, endPosition, isSelectionOverExisting);
                 if (startPosition > -1 && endPosition > 0 && !isSelectionOverExisting) {
-                    //Recompute cursor place
                     console.log("I place the delete icon");
                     eventCanvasData.ctx.drawImage(deleteIcon, startPosition, 0, endPosition - startPosition, 100);
                     userSelectionMap.push({startPosition, endPosition, size: endPosition - startPosition});
@@ -339,6 +340,12 @@ function setListeners() {
                     }
                 }
                 break;
+            case 77: // 'm' key
+                for (let i = 0; i < userSelectionMap.length - 1; i++){
+                    console.log("iterating over i = %d", i);
+                    
+                }
+                break;
         }
     };
 
@@ -346,8 +353,6 @@ function setListeners() {
         isMouseDown = true;
         startPosition = event.clientX - cursorCanvasData.size.left;
         // Recompute cursor place
-        cursorCanvasData.clear();
-
         drawCursor(event.clientX);
 
         // Compute event position based on cursor position
@@ -356,8 +361,6 @@ function setListeners() {
         if (eventPointMap.includes(startPosition)) {
             console.log("je suis sur un element ! a l'index:" + eventPointMap.indexOf(startPosition));
         }
-        //console.log("Event per pixels is " +  eventPerPixels);
-        //replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
     }, false);
 
     cursorCanvas.addEventListener('mouseup', function(event) {
@@ -409,7 +412,6 @@ function setListeners() {
             startPosition = event.clientX - cursorCanvasData.size.left;
     
             //Recompute cursor place
-            cursorCanvasData.clear();
             drawCursor(event.clientX);
             if (eventPointMap.includes(startPosition)) {
                 console.log("je suis sur un element ! a l'index:" + eventPointMap.indexOf(startPosition));
