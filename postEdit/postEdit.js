@@ -388,26 +388,60 @@ function setListeners() {
             userSelectionMap[userOnSelection.index].startPosition = event.clientX - positionCursor;
             
             // Limit the movement to the size of canvas only
-            if (userSelectionMap[userOnSelection.index].startPosition < 0) userSelectionMap[userOnSelection.index].startPosition = 0;
+            if (userSelectionMap[userOnSelection.index].startPosition < 0) 
+                userSelectionMap[userOnSelection.index].startPosition = 0;
+
             if (userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size > document.getElementById('eventBar').width)
                 userSelectionMap[userOnSelection.index].startPosition = document.getElementById('eventBar').width - userSelectionMap[userOnSelection.index].size; 
-            
+                       
             userSelectionMap[userOnSelection.index].endPosition = userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size;
+
+            for (let i = 0; i < userSelectionMap.length; i++) {
+                if (i != userOnSelection.index) {
+                    if (userSelectionMap[userOnSelection.index].startPosition < userSelectionMap[i].endPosition && userSelectionMap[userOnSelection.index].startPosition > userSelectionMap[i].startPosition) {
+                        console.log("Right collision %d", i);
+                        userSelectionMap[userOnSelection.index].startPosition = userSelectionMap[i].endPosition;
+                    }
+                    if (userSelectionMap[userOnSelection.index].endPosition > userSelectionMap[i].startPosition && userSelectionMap[userOnSelection.index].endPosition < userSelectionMap[i].endPosition) {
+                        console.log("Left collision %d", i);
+                        userSelectionMap[userOnSelection.index].startPosition = userSelectionMap[i].startPosition - userSelectionMap[userOnSelection.index].size;
+                    }
+                }
+            }
+
+            console.log(userSelectionMap[userOnSelection.index]);
 
             drawUserSelections();
         } else if (isMouseDown && userOnSelection.isOnSelection == "resize") {
-                if (userOnSelection.resizePoint == "start") {
-                    userSelectionMap[userOnSelection.index].startPosition = event.clientX;
-                    userSelectionMap[userOnSelection.index].size = userSelectionMap[userOnSelection.index].endPosition - event.clientX;
-                } else if (userOnSelection.resizePoint == "end"){
-                    userSelectionMap[userOnSelection.index].endPosition = event.clientX;
-                    userSelectionMap[userOnSelection.index].size = event.clientX - userSelectionMap[userOnSelection.index].startPosition;
-                }  
+            if (userOnSelection.resizePoint == "start") {
+                userSelectionMap[userOnSelection.index].startPosition = event.clientX;
+                
+            } else if (userOnSelection.resizePoint == "end") {
+                userSelectionMap[userOnSelection.index].endPosition = event.clientX;
+            }  
 
-                if (userSelectionMap[userOnSelection.index].size < 10)
-                userSelectionMap[userOnSelection.index].size = 10;
+            for (let i = 0; i < userSelectionMap.length; i++) {
+                if (i != userOnSelection.index) {
+                    if (userSelectionMap[userOnSelection.index].startPosition < userSelectionMap[i].endPosition && userSelectionMap[userOnSelection.index].startPosition > userSelectionMap[i].startPosition) {
+                        console.log("Right collision %d", i);
+                        userSelectionMap[userOnSelection.index].startPosition = userSelectionMap[i].endPosition;
+                    }
 
-                drawUserSelections();
+                    if (userSelectionMap[userOnSelection.index].endPosition > userSelectionMap[i].startPosition && userSelectionMap[userOnSelection.index].endPosition < userSelectionMap[i].endPosition) {
+                        console.log("Left collision %d", i);
+                        userSelectionMap[userOnSelection.index].endPosition = userSelectionMap[i].endPosition;
+                    } else {
+                        userSelectionMap[userOnSelection.index].size = event.clientX - userSelectionMap[userOnSelection.index].startPosition;
+                    }
+                }
+            }
+
+            if (userSelectionMap[userOnSelection.index].size < 50)
+                userSelectionMap[userOnSelection.index].size = 50;
+
+            console.log(userSelectionMap[userOnSelection.index]);
+
+            drawUserSelections();
         } else if (isMouseDown) {
             startPosition = event.clientX - cursorCanvasData.size.left;
     
@@ -418,13 +452,13 @@ function setListeners() {
                 setReplayerPos(eventPointMap.indexOf(startPosition));
             }
         } else {
-            console.log("position of X mouse is " + event.clientX);
+            //console.log("position of X mouse is " + event.clientX);
             cursorPosition = event.clientX;
-            console.log(userSelectionMap);
+            //console.log(userSelectionMap);
 
             for (let i = 0; i < userSelectionMap.length; i++){
-                console.log("je suis sur l'index: %d", i);
-                console.log("Iterating with positions: %d > %d / %d < %d", event.clientX, userSelectionMap[i].startPosition, event.clientX, userSelectionMap[i].endPosition);
+                //console.log("je suis sur l'index: %d", i);
+                //console.log("Iterating with positions: %d > %d / %d < %d", event.clientX, userSelectionMap[i].startPosition, event.clientX, userSelectionMap[i].endPosition);
                 if (event.clientX >= userSelectionMap[i].startPosition && event.clientX <= userSelectionMap[i].endPosition) {
                     if (event.clientX <= userSelectionMap[i].startPosition + 20) {
                         cursorCanvas.style.cursor = "ew-resize";
