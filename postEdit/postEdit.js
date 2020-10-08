@@ -318,6 +318,11 @@ function setListeners() {
                 if (startPosition > -1 && endPosition > 0 && !isSelectionOverExisting) {
                     console.log("I place the delete icon");
                     eventCanvasData.ctx.drawImage(deleteIcon, startPosition, 0, endPosition - startPosition, 100);
+                    if (endPosition < startPosition) {
+                        let tmp = startPosition;
+                        startPosition = endPosition;
+                        endPosition = tmp;
+                    }
                     userSelectionMap.push({startPosition, endPosition, size: endPosition - startPosition});
                     console.log(userSelectionMap);
                 }
@@ -422,10 +427,10 @@ function setListeners() {
 
             for (let i = 0; i < userSelectionMap.length; i++) {
                 if (i != userOnSelection.index) {
-                    if (userSelectionMap[userOnSelection.index].startPosition < userSelectionMap[i].endPosition && userSelectionMap[userOnSelection.index].startPosition > userSelectionMap[i].startPosition) {
-                        console.log("Right collision %d", i);
-                        userSelectionMap[userOnSelection.index].startPosition = userSelectionMap[i].endPosition;
-                    }
+                    //if (userSelectionMap[userOnSelection.index].startPosition < userSelectionMap[i].endPosition && userSelectionMap[userOnSelection.index].startPosition > userSelectionMap[i].startPosition) {
+                    //    console.log("Right collision %d", i);
+                    //    userSelectionMap[userOnSelection.index].startPosition = userSelectionMap[i].endPosition;
+                    //}
 
                     if (userSelectionMap[userOnSelection.index].endPosition > userSelectionMap[i].startPosition && userSelectionMap[userOnSelection.index].endPosition < userSelectionMap[i].endPosition) {
                         console.log("Left collision %d", i);
