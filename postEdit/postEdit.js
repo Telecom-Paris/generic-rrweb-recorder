@@ -346,10 +346,25 @@ function setListeners() {
                 }
                 break;
             case 77: // 'm' key
-                for (let i = 0; i < userSelectionMap.length - 1; i++){
-                    console.log("iterating over i = %d", i);
+                let tmpMergeArray = [];
+                eventCanvasData.clear();
+                for (let i = 0; i < userSelectionMap.length; i++){
+                    console.log(userSelectionMap);
+                    if (userSelectionMap[i + 1] && userSelectionMap[i].endPosition == userSelectionMap[i + 1].startPosition) {
+                        let drawSize = userSelectionMap[i].size + userSelectionMap[i + 1].size;
+                        eventCanvasData.ctx.drawImage(deleteIcon, userSelectionMap[i].startPosition, 0, drawSize, 100);
+                        console.log("Created new element at position %d with size %d, end at ", userSelectionMap[i].startPosition, drawSize, userSelectionMap[i].startPosition + drawSize);
+                        tmpMergeArray.push({startPosition: userSelectionMap[i].startPosition, endPosition: userSelectionMap[i].startPosition + drawSize, size: drawSize});
+                        i++;
+                    }
+                    else {
+                        console.log("redraw old element at position %d with size %d, end at ", userSelectionMap[i].startPosition, userSelectionMap[i].size, userSelectionMap[i].startPosition + userSelectionMap[i].size);
+                        eventCanvasData.ctx.drawImage(deleteIcon, userSelectionMap[i].startPosition, 0, userSelectionMap[i].size, 100);
+                        tmpMergeArray.push({startPosition: userSelectionMap[i].startPosition, endPosition: userSelectionMap[i].startPosition + userSelectionMap[i].size, size: userSelectionMap[i].size});
+                    }
                     
                 }
+                userSelectionMap = tmpMergeArray;
                 break;
         }
     };
@@ -398,7 +413,7 @@ function setListeners() {
 
             if (userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size > document.getElementById('eventBar').width)
                 userSelectionMap[userOnSelection.index].startPosition = document.getElementById('eventBar').width - userSelectionMap[userOnSelection.index].size; 
-                       
+
             userSelectionMap[userOnSelection.index].endPosition = userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size;
 
             for (let i = 0; i < userSelectionMap.length; i++) {
@@ -414,9 +429,14 @@ function setListeners() {
                 }
             }
 
+            console.log(userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size);
+
             console.log(userSelectionMap[userOnSelection.index]);
 
             drawUserSelections();
+            
+            userSelectionMap[userOnSelection.index].endPosition = userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size;
+
         } else if (isMouseDown && userOnSelection.isOnSelection == "resize") {
             if (userOnSelection.resizePoint == "start") {
                 userSelectionMap[userOnSelection.index].startPosition = event.clientX;
