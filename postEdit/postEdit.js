@@ -427,15 +427,17 @@ function setListeners() {
 
             for (let i = 0; i < userSelectionMap.length; i++) {
                 if (i != userOnSelection.index) {
-                    //if (userSelectionMap[userOnSelection.index].startPosition < userSelectionMap[i].endPosition && userSelectionMap[userOnSelection.index].startPosition > userSelectionMap[i].startPosition) {
-                    //    console.log("Right collision %d", i);
-                    //    userSelectionMap[userOnSelection.index].startPosition = userSelectionMap[i].endPosition;
-                    //}
+                    if (userSelectionMap[userOnSelection.index].startPosition < userSelectionMap[i].endPosition && userSelectionMap[userOnSelection.index].startPosition > userSelectionMap[i].startPosition) {
+                        console.log("Right collision during resize %d", i);
+                        userSelectionMap[userOnSelection.index].startPosition = userSelectionMap[i].endPosition;
+                    } else if (userOnSelection.resizePoint == "start") {
+                        userSelectionMap[userOnSelection.index].size = userSelectionMap[userOnSelection.index].endPosition - event.clientX;
+                    }
 
                     if (userSelectionMap[userOnSelection.index].endPosition > userSelectionMap[i].startPosition && userSelectionMap[userOnSelection.index].endPosition < userSelectionMap[i].endPosition) {
-                        console.log("Left collision %d", i);
+                        console.log("Left collision during resize %d", i);
                         userSelectionMap[userOnSelection.index].endPosition = userSelectionMap[i].endPosition;
-                    } else {
+                    } else  if (userOnSelection.resizePoint == "end"){
                         userSelectionMap[userOnSelection.index].size = event.clientX - userSelectionMap[userOnSelection.index].startPosition;
                     }
                 }
