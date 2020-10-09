@@ -323,12 +323,38 @@ function setListeners() {
                         startPosition = endPosition;
                         endPosition = tmp;
                     }
-                    userSelectionMap.push({startPosition, endPosition, size: endPosition - startPosition});
-                    console.log(userSelectionMap);
+
+                    if (userSelectionMap.length > 0) {
+                        console.log("Je rentre dans cette case");
+                        for (let i = 0; i < userSelectionMap.length; i++) {
+                            console.log("Looking on index %d/", i, userSelectionMap.length - 1);
+                            console.log("startPosition: %d, endPosition: %d, userSelectionMap.start: %d", startPosition, endPosition, userSelectionMap[i].startPosition);
+                            if (i == 0 && startPosition > 0 && endPosition < userSelectionMap[0].startPosition) {
+                                console.log("I should put at beginning");
+                                userSelectionMap.unshift({startPosition, endPosition, size: endPosition - startPosition});
+                                break;
+                            }
+                            if (i != userSelectionMap.length - 1 && userSelectionMap[i + 1]) {
+                                console.log("Checking here: %d > %d, endPosition: %d < %d", startPosition, userSelectionMap[i].endPosition, endPosition, userSelectionMap[i + 1].startPosition);
+                                if (startPosition > userSelectionMap[i].endPosition && endPosition < userSelectionMap[i + 1].startPosition) {
+                                    console.log("I should put between index %d and %d", i, i + 1);
+                                    userSelectionMap.splice(i + 1, 0, {startPosition, endPosition, size: endPosition - startPosition});
+                                    break;
+                                }
+                            }
+                            if (i == userSelectionMap.length - 1 && startPosition > userSelectionMap[i].endPosition) {
+                                console.log("I should put at end");
+                                userSelectionMap.push({startPosition, endPosition, size: endPosition - startPosition});
+                                break;
+                            }
+                        }
+                    } else {
+                        userSelectionMap.push({startPosition, endPosition, size: endPosition - startPosition});
+                    }
                 }
+                console.log(userSelectionMap);
                 isSelectionOverExisting = false;
                 break;
-
             case 83: // 's' key
                 // We detect if the mouse is over a selection
                 console.log("Delete key detected");
@@ -348,23 +374,43 @@ function setListeners() {
             case 77: // 'm' key
                 let tmpMergeArray = [];
                 eventCanvasData.clear();
+                console.log(userSelectionMap);
                 for (let i = 0; i < userSelectionMap.length; i++){
-                    console.log(userSelectionMap);
-                    if (userSelectionMap[i + 1] && userSelectionMap[i].endPosition == userSelectionMap[i + 1].startPosition) {
-                        let drawSize = userSelectionMap[i].size + userSelectionMap[i + 1].size;
-                        eventCanvasData.ctx.drawImage(deleteIcon, userSelectionMap[i].startPosition, 0, drawSize, 100);
-                        console.log("Created new element at position %d with size %d, end at ", userSelectionMap[i].startPosition, drawSize, userSelectionMap[i].startPosition + drawSize);
-                        tmpMergeArray.push({startPosition: userSelectionMap[i].startPosition, endPosition: userSelectionMap[i].startPosition + drawSize, size: drawSize});
-                        i++;
-                    }
-                    else {
-                        console.log("redraw old element at position %d with size %d, end at ", userSelectionMap[i].startPosition, userSelectionMap[i].size, userSelectionMap[i].startPosition + userSelectionMap[i].size);
-                        eventCanvasData.ctx.drawImage(deleteIcon, userSelectionMap[i].startPosition, 0, userSelectionMap[i].size, 100);
-                        tmpMergeArray.push({startPosition: userSelectionMap[i].startPosition, endPosition: userSelectionMap[i].startPosition + userSelectionMap[i].size, size: userSelectionMap[i].size});
-                    }
                     
+                    let k = i;
+                    
+                    let drawSize = 0;
+                    let start = -1;
+                    let end = -1;
+                    while (true) {
+                        if (userSelectionMap[k + 1] && userSelectionMap[k].endPosition == userSelectionMap[k + 1].startPosition) {
+                            if (start == -1) {
+                                console.log("I set the start %d", userSelectionMap[k].startPosition);
+                                start = userSelectionMap[k].startPosition;
+                            }
+                            drawSize += userSelectionMap[k].size;
+                            console.log("Merge element %d with element %d", k , k + 1);
+                            k++;
+                        }
+                        else {
+                            if (start > -1) {
+                                end = userSelectionMap[k].endPosition;
+                                drawSize += userSelectionMap[k].size;
+                                console.log("I have merged datas, should draw from %d to %d with size %d", start, end, drawSize);
+                                k++;
+                                tmpMergeArray.push({startPosition: start, endPosition: end, size: drawSize});
+                            } 
+                            if (userSelectionMap[k]) {
+                                console.log("redraw old element at position %d with size %d, end at ", userSelectionMap[k].startPosition, userSelectionMap[k].size, userSelectionMap[k].endPosition);
+                                tmpMergeArray.push({startPosition: userSelectionMap[k].startPosition, endPosition: userSelectionMap[k].endPosition, size: userSelectionMap[k].size});
+                            }
+                            i = k;
+                            break;
+                        }
+                    }
                 }
                 userSelectionMap = tmpMergeArray;
+                drawUserSelections();
                 break;
         }
     };
@@ -428,8 +474,6 @@ function setListeners() {
                     }
                 }
             }
-
-            console.log(userSelectionMap[userOnSelection.index].startPosition + userSelectionMap[userOnSelection.index].size);
 
             console.log(userSelectionMap[userOnSelection.index]);
 
