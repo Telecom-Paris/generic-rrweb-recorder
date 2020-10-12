@@ -78,6 +78,10 @@ let userOnSelection = {
 
 let isSelectionOverExisting = false;
 
+let positionCursor = -1;
+
+let replayerData = {currentTime: 0, totalTime: 0};
+
 async function launchRrweb(manualLoad) {
     // Loading data
     if (manualLoad == false) {
@@ -137,6 +141,9 @@ async function launchRrweb(manualLoad) {
             cursorCanvasData.ctx.drawImage(this, 0,0, cursorIconData.size.width, 100);
         }
 
+        // Set the current timer text
+        document.getElementById('textTimer').innerHTML = "0:00 / " + convertTextTimer(replay.getMetaData().totalTime);
+
         // Draw event point on canvas considering their timestamps
         let i;
         eventPointCanvasData.ctx.fillStyle = "#3399ff";
@@ -150,6 +157,12 @@ async function launchRrweb(manualLoad) {
         // Listen for events
         setListeners();
     }
+}
+
+function convertTextTimer(millis) {
+    var minutes = Math.floor(millis / 60000);
+    var seconds = ((millis % 60000) / 1000).toFixed(0);
+    return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
 }
 
 function launchRrwebWhenCustomLoad(){
@@ -199,6 +212,14 @@ function loadEventsFromUser() {
     }
 }
 
+function doneButton() {
+    if (confirm("Are you sure you did all your modifications ?") == true) {
+        if (userSelectionMap.length > 0){
+            console.log("I should cut here");
+        }
+    }
+}
+
 function drawCursor(xAxe) {
     cursorCanvasData.clear();
     cursorIconData.position = xAxe - cursorCanvasData.size.left - cursorIconData.size.width;
@@ -215,8 +236,8 @@ function drawUserSelections() {
 }
 
 function setReplayerPos(arrayIndex) {
-    //console.log("Set replayer pos! ");
     replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
+    document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + convertTextTimer(replay.getMetaData().totalTime);
 }
 
 function clickPlayButton() {
@@ -243,8 +264,7 @@ function clickPlayButton() {
                 //document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
         }, 100);
                     
-        replay.play();
-        //replay.play(currentTime);
+        replay.play(replayerData.currentTime);
         audioDom.play();
     } else if (playButtonStatus == "PLAYING") {
         playButtonStatus = "PAUSED";
@@ -262,11 +282,11 @@ function clickPlayButton() {
         audioDom.pause();
                     
         console.log("Replay time is " + replay.getCurrentTime() / 1000);
-		audioDom.currentTime = replay.getCurrentTime() / 1000;
+        audioDom.currentTime = replay.getCurrentTime() / 1000;
+        
+        replayerData.currentTime = currentTime;
     }
 }
-
-let positionCursor = -1;
 
 function setListeners() {
     document.onkeydown = function(event) {
@@ -283,7 +303,6 @@ function setListeners() {
                 }
                 break;
             case 37: // Left arrow
-               
                 drawCursor(cursorIconData.realPosition - 1);
                 if (eventPointMap.includes(cursorIconData.realPosition - cursorCanvasData.size.left)) {
                     setReplayerPos(eventPointMap.indexOf(cursorIconData.realPosition - cursorCanvasData.size.left));
@@ -376,9 +395,7 @@ function setListeners() {
                 eventCanvasData.clear();
                 console.log(userSelectionMap);
                 for (let i = 0; i < userSelectionMap.length; i++){
-                    
                     let k = i;
-                    
                     let drawSize = 0;
                     let start = -1;
                     let end = -1;
@@ -418,6 +435,7 @@ function setListeners() {
     cursorCanvas.addEventListener('mousedown', function(event) {
         isMouseDown = true;
         startPosition = event.clientX - cursorCanvasData.size.left;
+        sliderbarValue = startPosition;
         // Recompute cursor place
         drawCursor(event.clientX);
 
@@ -426,6 +444,9 @@ function setListeners() {
         console.log(eventPointMap);
         if (eventPointMap.includes(startPosition)) {
             console.log("je suis sur un element ! a l'index:" + eventPointMap.indexOf(startPosition));
+            setReplayerPos(eventPointMap.indexOf(startPosition));
+            audioDom.currentTime = replay.getCurrentTime() / 1000;
+            replayerData.currentTime = replay.getCurrentTime();
         }
     }, false);
 
@@ -514,14 +535,21 @@ function setListeners() {
 
             drawUserSelections();
         } else if (isMouseDown) {
+            if (playButtonStatus == "PLAYING")
+                replay.pause();
             startPosition = event.clientX - cursorCanvasData.size.left;
-    
+            sliderbarValue = startPosition;
+
             //Recompute cursor place
             drawCursor(event.clientX);
             if (eventPointMap.includes(startPosition)) {
                 console.log("je suis sur un element ! a l'index:" + eventPointMap.indexOf(startPosition));
                 setReplayerPos(eventPointMap.indexOf(startPosition));
+                audioDom.currentTime = replay.getCurrentTime() / 1000;
+                replayerData.currentTime = replay.getCurrentTime();
             }
+            if (playButtonStatus == "PLAYING")
+                replay.play(replayerData.currentTime);
         } else {
             //console.log("position of X mouse is " + event.clientX);
             cursorPosition = event.clientX;
