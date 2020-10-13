@@ -92,7 +92,7 @@ async function launchRrweb(manualLoad) {
     audioBlob = await fetch(localStorage.getItem('rrweb-audio')).then(r => r.blob());
 
     console.log(events);
-     
+
     //Empty replayerDiv in case of manual loading
     document.getElementById('replayDiv').innerHTML = "";
 
@@ -212,10 +212,84 @@ function loadEventsFromUser() {
     }
 }
 
+function saveAs(data, filename) {
+    // Create invisible link
+    const a = document.createElement("a");
+    a.style.display = "none";
+    document.body.appendChild(a);
+
+    // Set the HREF to a Blob representation of the data to be downloaded
+    a.href = window.URL.createObjectURL(
+        new Blob([data], { type: "application/zip" })
+    );
+
+      // Use download attribute to set set desired file name
+       a.setAttribute("download", filename);
+
+       // Trigger the download by simulating click
+    a.click();
+
+    // Cleanup
+    window.URL.revokeObjectURL(a.href);
+       document.body.removeChild(a);
+}
+
+function downRecord() {
+    let zip = new JSZip();
+        
+    let textData = readTextFile("../download/download.html");
+    let textDataEnd = readTextFile("../download/download_end.html");
+    let jsData = readTextFile("../lib/rrweb/dist/rrweb.min.js");
+    let cssData = readTextFile("../lib/rrweb/dist/rrweb.min.css");
+        
+    console.log(addslashes(JSON.stringify(cuttedEvents)));
+    let addEventsToFile = "let events_string = \"" + addslashes(JSON.stringify(cuttedEvents)) + '";';
+        
+    let eventBlob = new Blob([JSON.stringify(cuttedEvents)], {type: "application/json"});
+        
+    textData += addEventsToFile + textDataEnd;
+    zip.file("index.html", textData);
+    zip.file("js/rrweb.min.js", jsData);
+    zip.file("js/rrweb.min.css", cssData);
+    zip.file("data/events.json", eventBlob);
+    zip.file("data/sound.mp3", cuttedBlob);
+        
+    // Once archive has been generated, we can download it
+    zip.generateAsync({type:"blob"})
+    .then(function(content) {
+        saveAs(content, "cours.zip");
+    });
+}
+
 function doneButton() {
     if (confirm("Are you sure you did all your modifications ?") == true) {
         if (userSelectionMap.length > 0){
+            let cuttedEvents = [];
+            let audiocutts = [];
             console.log("I should cut here");
+            //Push the 2 first elements because they contains webpage design, etc...
+            cuttedEvents = events;
+            //recompute first event timestamps
+            cuttedEvents[0].timestamp = events[2].timestamp;
+            cuttedEvents[1].timestamp = events[2].timestamp;
+
+            mergeSelection();
+            for (let i = 2; i < eventPointMap.length; i++) {
+                for (let k = 0; k < userSelectionMap.length; k++) {
+                    if (eventPointMap[i] > userSelectionMap[k].startPosition && eventPointMap[i] < userSelectionMap[k].endPosition) {
+                        console.log("I should exclude event number %d from selection", i);
+                        cuttedEvents.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+            console.log(cuttedEvents);
+            
+            /*cutterLib.cut(audioBlob, startCut, endCut, function(cuttedBlob) {
+                console.log("Splitting completed");
+                console.log(cuttedBlob);
+                downRecord();
+            }, 160);*/
         }
     }
 }
@@ -261,7 +335,6 @@ function clickPlayButton() {
                 sliderbarValue += Math.ceil(eventsPerSecond);
                 drawCursor(sliderbarValue);
                 //console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
-                //document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + totalTime;
         }, 100);
                     
         replay.play(replayerData.currentTime);
@@ -286,6 +359,46 @@ function clickPlayButton() {
         
         replayerData.currentTime = currentTime;
     }
+}
+
+function mergeSelection() {
+    let tmpMergeArray = [];
+    eventCanvasData.clear();
+    console.log(userSelectionMap);
+    for (let i = 0; i < userSelectionMap.length; i++){
+        let k = i;
+        let drawSize = 0;
+        let start = -1;
+        let end = -1;
+        while (true) {
+            if (userSelectionMap[k + 1] && userSelectionMap[k].endPosition == userSelectionMap[k + 1].startPosition) {
+                if (start == -1) {
+                    console.log("I set the start %d", userSelectionMap[k].startPosition);
+                    start = userSelectionMap[k].startPosition;
+                }
+                drawSize += userSelectionMap[k].size;
+                console.log("Merge element %d with element %d", k , k + 1);
+                k++;
+            }
+            else {
+                if (start > -1) {
+                    end = userSelectionMap[k].endPosition;
+                    drawSize += userSelectionMap[k].size;
+                    console.log("I have merged datas, should draw from %d to %d with size %d", start, end, drawSize);
+                    k++;
+                    tmpMergeArray.push({startPosition: start, endPosition: end, size: drawSize});
+                } 
+                if (userSelectionMap[k]) {
+                    console.log("redraw old element at position %d with size %d, end at ", userSelectionMap[k].startPosition, userSelectionMap[k].size, userSelectionMap[k].endPosition);
+                    tmpMergeArray.push({startPosition: userSelectionMap[k].startPosition, endPosition: userSelectionMap[k].endPosition, size: userSelectionMap[k].size});
+                }
+                i = k;
+                break;
+            }
+        }
+    }
+    userSelectionMap = tmpMergeArray;
+    drawUserSelections();
 }
 
 function setListeners() {
@@ -391,43 +504,7 @@ function setListeners() {
                 }
                 break;
             case 77: // 'm' key
-                let tmpMergeArray = [];
-                eventCanvasData.clear();
-                console.log(userSelectionMap);
-                for (let i = 0; i < userSelectionMap.length; i++){
-                    let k = i;
-                    let drawSize = 0;
-                    let start = -1;
-                    let end = -1;
-                    while (true) {
-                        if (userSelectionMap[k + 1] && userSelectionMap[k].endPosition == userSelectionMap[k + 1].startPosition) {
-                            if (start == -1) {
-                                console.log("I set the start %d", userSelectionMap[k].startPosition);
-                                start = userSelectionMap[k].startPosition;
-                            }
-                            drawSize += userSelectionMap[k].size;
-                            console.log("Merge element %d with element %d", k , k + 1);
-                            k++;
-                        }
-                        else {
-                            if (start > -1) {
-                                end = userSelectionMap[k].endPosition;
-                                drawSize += userSelectionMap[k].size;
-                                console.log("I have merged datas, should draw from %d to %d with size %d", start, end, drawSize);
-                                k++;
-                                tmpMergeArray.push({startPosition: start, endPosition: end, size: drawSize});
-                            } 
-                            if (userSelectionMap[k]) {
-                                console.log("redraw old element at position %d with size %d, end at ", userSelectionMap[k].startPosition, userSelectionMap[k].size, userSelectionMap[k].endPosition);
-                                tmpMergeArray.push({startPosition: userSelectionMap[k].startPosition, endPosition: userSelectionMap[k].endPosition, size: userSelectionMap[k].size});
-                            }
-                            i = k;
-                            break;
-                        }
-                    }
-                }
-                userSelectionMap = tmpMergeArray;
-                drawUserSelections();
+                mergeSelection();
                 break;
         }
     };
