@@ -228,15 +228,15 @@ function saveAs(data, filename) {
     // Use download attribute to set set desired file name
     a.setAttribute("download", filename);
 
-       // Trigger the download by simulating click
+    // Trigger the download by simulating click
     a.click();
 
     // Cleanup
     window.URL.revokeObjectURL(a.href);
-       document.body.removeChild(a);
+    document.body.removeChild(a);
 }
 
-function downRecord() {
+function downRecord(cuttedEvents, cuttedBlob) {
     let zip = new JSZip();
         
     let textData = readTextFile("../download/download.html");
@@ -263,11 +263,57 @@ function downRecord() {
     });
 }
 
-function doneButton() {
+function readTextFile(file) {
+    var rawFile = new XMLHttpRequest();
+    var isFileValid = false;
+    rawFile.open("GET", file, false);
+    rawFile.onreadystatechange = function () {
+        if (rawFile.readyState === 4) {
+            if(rawFile.status === 200 || rawFile.status == 0) {
+                isFileValid = true;
+            }
+        }
+    }
+    rawFile.send(null);
+    if (isFileValid)
+        return rawFile.responseText;
+    else
+        return "error";
+}
+
+function addslashes(str) {
+    return str.replace(/\\/g, '\\\\').
+    replace(/\u0008/g, '\\b').
+    replace(/\t/g, '\\t').
+    replace(/\n/g, '\\n').
+    replace(/\f/g, '\\f').
+    replace(/\r/g, '\\r').
+    replace(/'/g, '\\\'').
+    replace(/"/g, '\\"').
+    replace(/\//g, '\\/');
+}
+
+async function doneButton() {
+    let cuttedEvents = [];
+    let audioCuts = [];
+    let numberOfElementToKeep = 0;
+
+    function audioSplitCallback(cuttedBlob) {
+        audioCuts.push(cuttedBlob);
+        console.log("Length of cutted Blob array %d", audioCuts.length);
+        console.log(audioCuts);
+        if (audioCuts.length == numberOfElementToKeep) {
+            ConcatenateBlobs(audioCuts, 'audio/mpeg3', function(resultingBlob) {
+				soundBlob = resultingBlob;
+				downRecord(cuttedEvents, resultingBlob);
+			});
+        }
+    }
     if (confirm("Are you sure you did all your modifications ?") == true) {
         if (userSelectionMap.length > 0){
-            let cuttedEvents = [];
-            let audiocutts = [];
+            
+            let cutterLib = new mp3cutter("../lib/web-audio-recorder/lib/");
+
             console.log("I should cut here");
             //Push the 2 first elements because they contains webpage design, etc...
             cuttedEvents = events;
@@ -288,16 +334,33 @@ function doneButton() {
             console.log(cuttedEvents);
             
             console.log("Je sais que mon audio dure %f sec et que la taille de la div est de %d, ce qui fait %f sec par px", audioDom.duration, replayDivSize, audioDom.duration / replayDivSize);
-            console.log("Mon curseur etant placé a %d px,")
-
-            /*cutterLib.cut(audioBlob, startCut, endCut, function(cuttedBlob) {
-                console.log("Splitting completed");
-                console.log(cuttedBlob);
-                downRecord();
-            }, 160);*/
+            let secPerPx = audioDom.duration / replayDivSize;
+            console.log("Length of userSelection is %d", userSelectionMap.length);
+            
+            for (let i = 0; i < userSelectionMap.length; i++) {
+                if (i == 0) {
+                    if (userSelectionMap[i].startPosition != 0) {
+                        console.log("Je garde de 0 a %f", userSelectionMap[i].startPosition * secPerPx);
+                        numberOfElementToKeep++;
+                        await cutterLib.cut(audioBlob, 0, userSelectionMap[i].startPosition * secPerPx, audioSplitCallback, 160);
+                    }
+                }
+                if (userSelectionMap[i + 1]) {
+                    console.log("Je garde de %f a %f", userSelectionMap[i].endPosition * secPerPx, userSelectionMap[i + 1].startPosition * secPerPx);
+                    numberOfElementToKeep++;
+                    await cutterLib.cut(audioBlob, userSelectionMap[i].endPosition * secPerPx, userSelectionMap[i + 1].startPosition * secPerPx, audioSplitCallback, 160);
+                }
+                else {
+                    console.log("Je garde de %f a la fin", userSelectionMap[i].endPosition * secPerPx);
+                    numberOfElementToKeep++;
+                    await cutterLib.cut(audioBlob, userSelectionMap[i].endPosition * secPerPx, audioDom.duration, audioSplitCallback, 160);
+                }
+            }
         }
     }
 }
+
+
 
 function drawCursor(xAxe) {
     cursorCanvasData.clear();
@@ -632,7 +695,7 @@ function setListeners() {
                     replayerData.currentTime = replay.getCurrentTime();
                     break;
                 }
-            } 
+            }
             if (playButtonStatus == "PLAYING")
                 replay.play(replayerData.currentTime);
         } else {
