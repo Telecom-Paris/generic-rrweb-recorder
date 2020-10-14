@@ -51,7 +51,7 @@ let playButtonStatus = "PAUSED";
 
 let sliderbarValue = 0;
 
-let replayDivSize;
+let replayDivSize = 0;
 
 let wavesurfer;
 
@@ -81,6 +81,8 @@ let isSelectionOverExisting = false;
 let positionCursor = -1;
 
 let replayerData = {currentTime: 0, totalTime: 0};
+
+let audioDom;
 
 async function launchRrweb(manualLoad) {
     // Loading data
@@ -223,8 +225,8 @@ function saveAs(data, filename) {
         new Blob([data], { type: "application/zip" })
     );
 
-      // Use download attribute to set set desired file name
-       a.setAttribute("download", filename);
+    // Use download attribute to set set desired file name
+    a.setAttribute("download", filename);
 
        // Trigger the download by simulating click
     a.click();
@@ -285,6 +287,9 @@ function doneButton() {
             }
             console.log(cuttedEvents);
             
+            console.log("Je sais que mon audio dure %f sec et que la taille de la div est de %d, ce qui fait %f sec par px", audioDom.duration, replayDivSize, audioDom.duration / replayDivSize);
+            console.log("Mon curseur etant placé a %d px,")
+
             /*cutterLib.cut(audioBlob, startCut, endCut, function(cuttedBlob) {
                 console.log("Splitting completed");
                 console.log(cuttedBlob);
@@ -619,12 +624,15 @@ function setListeners() {
 
             //Recompute cursor place
             drawCursor(event.clientX);
-            if (eventPointMap.includes(startPosition)) {
-                console.log("je suis sur un element ! a l'index:" + eventPointMap.indexOf(startPosition));
-                setReplayerPos(eventPointMap.indexOf(startPosition));
-                audioDom.currentTime = replay.getCurrentTime() / 1000;
-                replayerData.currentTime = replay.getCurrentTime();
-            }
+            for (let i = 0; i < eventPointMap.length; i++) {
+                if (startPosition > eventPointMap[i] && startPosition < eventPointMap[i] + 10) {
+                    console.log("je suis sur un element ! a l'index:" + i);
+                    setReplayerPos(i);
+                    audioDom.currentTime = replay.getCurrentTime() / 1000;
+                    replayerData.currentTime = replay.getCurrentTime();
+                    break;
+                }
+            } 
             if (playButtonStatus == "PLAYING")
                 replay.play(replayerData.currentTime);
         } else {
