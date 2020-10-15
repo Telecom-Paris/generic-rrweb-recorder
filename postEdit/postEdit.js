@@ -304,33 +304,53 @@ async function doneButton() {
         console.log(audioCuts);
         if (audioCuts.length == numberOfElementToKeep) {
             ConcatenateBlobs(audioCuts, 'audio/mpeg3', function(resultingBlob) {
-				soundBlob = resultingBlob;
+                console.log("Original size of events is %d", events.length);
+                console.log("New size of events is %d", cuttedEvents.length);
 				downRecord(cuttedEvents, resultingBlob);
 			});
         }
     }
+
     if (confirm("Are you sure you did all your modifications ?") == true) {
         if (userSelectionMap.length > 0){
-            
-            let cutterLib = new mp3cutter("../lib/web-audio-recorder/lib/");
 
-            console.log("I should cut here");
-            //Push the 2 first elements because they contains webpage design, etc...
-            cuttedEvents = events;
-            //recompute first event timestamps
-            cuttedEvents[0].timestamp = events[2].timestamp;
-            cuttedEvents[1].timestamp = events[2].timestamp;
+            let toCut = [];
 
             mergeSelection();
+
+            let cutterLib = new mp3cutter("../lib/web-audio-recorder/lib/");
+            
+            //for (let i = 0; i < events.length; i++) {
+                //cuttedEvents.push(events[i]);
+            //}
+            //Push the 2 first elements because they contains webpage design, etc...
+            //recompute first event timestamps
+            //cuttedEvents[0].timestamp = events[2].timestamp;
+            //cuttedEvents[1].timestamp = events[2].timestamp;
+
             for (let i = 2; i < eventPointMap.length; i++) {
                 for (let k = 0; k < userSelectionMap.length; k++) {
                     if (eventPointMap[i] > userSelectionMap[k].startPosition && eventPointMap[i] < userSelectionMap[k].endPosition) {
                         console.log("I should exclude event number %d from selection", i);
-                        cuttedEvents.splice(i, 1);
+                        toCut.push(i);
+                        //cuttedEvents.splice(i, 1);
                         break;
                     }
                 }
             }
+
+            cuttedEvents.push(events[0]);
+            cuttedEvents.push(events[1]);
+            cuttedEvents[0].timestamp = events[2].timestamp;
+            cuttedEvents[1].timestamp = events[2].timestamp;
+
+            for (let i = 2; i < events.length; i++) {
+                if (!toCut.includes(i))
+                    cuttedEvents.push(events[i]);
+                else
+                    console.log("I do not include item at index %d", i);
+            }
+
             console.log(cuttedEvents);
             
             console.log("Je sais que mon audio dure %f sec et que la taille de la div est de %d, ce qui fait %f sec par px", audioDom.duration, replayDivSize, audioDom.duration / replayDivSize);
@@ -356,6 +376,8 @@ async function doneButton() {
                     await cutterLib.cut(audioBlob, userSelectionMap[i].endPosition * secPerPx, audioDom.duration, audioSplitCallback, 160);
                 }
             }
+        } else {
+            downRecord(events, audioBlob);
         }
     }
 }
