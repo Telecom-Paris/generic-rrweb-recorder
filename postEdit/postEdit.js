@@ -187,15 +187,16 @@ function convertTextTimerSec(time) {
     return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
 }
 
-function launchRrwebWhenCustomLoad(){
-    customElemCounter++;
-
-    if (customElemCounter == 2)
-        launchRrweb(true);
-}
-
 function loadEventsFromUser() {
-    var inputEvents, inputSound, fileSound, fileEvents;
+    
+    function launchRrwebWhenCustomLoad(){
+        customElemCounter++;
+    
+        if (customElemCounter == 2)
+            launchRrweb(true);
+    }
+
+    let inputEvents, inputSound, fileSound, fileEvents;
     let soundFr, eventFr; 
 
     if (typeof window.FileReader !== 'function') {
@@ -381,9 +382,8 @@ async function doneButton() {
                     await cutterLib.cut(audioBlob, userSelectionMap[i].endPosition * secPerPx, audioDom.duration, audioSplitCallback, 160);
                 }
             }
-        } else {
+        } else
             downRecord(events, audioBlob);
-        }
     }
 }
 
@@ -589,6 +589,20 @@ function setListeners() {
                 console.log(userSelectionMap);
                 isSelectionOverExisting = false;
                 break;
+            case 83: // 's' key
+                for (let i = 0; i < userSelectionMap.length; i++){
+                    console.log("iterating over i = %d", i);
+                    console.log("Iterating with positions: %d > %d / %d < %d", cursorPosition, userSelectionMap[i].startPosition, event.clientX, userSelectionMap[i].endPosition);
+                    if (cursorPosition >= userSelectionMap[i].startPosition && cursorPosition <= userSelectionMap[i].endPosition) {
+                        console.log("We are over element %d, deleting it", i);
+                        userSelectionMap.splice(i, 1);
+                        drawUserSelections();
+                        userOnSelection.isOnSelection = null;
+                        cursorCanvas.style.cursor = "pointer";
+                        break;
+                    }
+                }
+                break;
             case 82: // 'r' key
                 // We detect if the mouse is over a selection
                 console.log("Delete key detected");
@@ -671,25 +685,32 @@ function setListeners() {
 
         } else if (isMouseDown && userOnSelection.isOnSelection == "resize") {
             if (userOnSelection.resizePoint == "start") {
-                userSelectionMap[userOnSelection.index].startPosition = event.clientX;
-                
+                userSelectionMap[userOnSelection.index].startPosition = event.clientX;  
             } else if (userOnSelection.resizePoint == "end") {
                 userSelectionMap[userOnSelection.index].endPosition = event.clientX;
             }  
 
             for (let i = 0; i < userSelectionMap.length; i++) {
-                if (i != userOnSelection.index) {
+                if (i != userOnSelection.index && userSelectionMap.length > 1) {
                     if (userSelectionMap[userOnSelection.index].startPosition < userSelectionMap[i].endPosition && userSelectionMap[userOnSelection.index].startPosition > userSelectionMap[i].startPosition) {
                         console.log("Right collision during resize %d", i);
                         userSelectionMap[userOnSelection.index].startPosition = userSelectionMap[i].endPosition;
                     } else if (userOnSelection.resizePoint == "start") {
+                        console.log("Je resize au niveau de la taille start");
                         userSelectionMap[userOnSelection.index].size = userSelectionMap[userOnSelection.index].endPosition - event.clientX;
                     }
 
                     if (userSelectionMap[userOnSelection.index].endPosition > userSelectionMap[i].startPosition && userSelectionMap[userOnSelection.index].endPosition < userSelectionMap[i].endPosition) {
                         console.log("Left collision during resize %d", i);
                         userSelectionMap[userOnSelection.index].endPosition = userSelectionMap[i].endPosition;
-                    } else  if (userOnSelection.resizePoint == "end"){
+                    } else if (userOnSelection.resizePoint == "end"){
+                        userSelectionMap[userOnSelection.index].size = event.clientX - userSelectionMap[userOnSelection.index].startPosition;
+                    }
+                } else if (userSelectionMap.length == 1) {
+                    if (userOnSelection.resizePoint == "start") {
+                        userSelectionMap[userOnSelection.index].size = userSelectionMap[userOnSelection.index].endPosition - event.clientX;
+                    }
+                    if (userOnSelection.resizePoint == "end"){
                         userSelectionMap[userOnSelection.index].size = event.clientX - userSelectionMap[userOnSelection.index].startPosition;
                     }
                 }
@@ -755,18 +776,14 @@ function computeCursorPosition() {
         if (startPosition > eventPointMap[i] && startPosition < eventPointMap[i] + 10) {
             console.log("je suis sur un element ! a l'index:" + i);
             setReplayerPos(i);
-            
-            console.log("Time computed by rrweb %d", replay.getCurrentTime() / 1000);
             replayerData.currentTime = replay.getCurrentTime();
             occurence = 1;
             break;
         }
     }
 
-    if (occurence == 0) {
-        console.log("Time computed by me %d", event.clientX * secPerPx);
+    if (!occurence)
         document.getElementById('textTimer').innerHTML = convertTextTimerSec(event.clientX * secPerPx) + " / " + convertTextTimer(replayerData.totalTime);
-    }
 
     if (playButtonStatus == "PLAYING")
         replay.play(replayerData.currentTime);
