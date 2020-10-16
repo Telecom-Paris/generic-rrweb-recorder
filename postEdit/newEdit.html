@@ -20,6 +20,12 @@
   </head>
   <body onload="launchRrweb(false)">
     <main>
+        <div id="overlay">
+            <div id="overlay-content">
+                <img src="../media/recorder/loading.gif" alt="Creating your record">
+                <p>Currently creating your record, please wait...</p>
+            </div>
+        </div>
         <button class="own_upload_button" onclick="document.getElementById('event-selector').click();">Upload your own events</button>
         <button class="own_upload_button" onclick="document.getElementById('sound-selector').click();">Upload your own sound</button>
         <button class="own_upload_button" onclick="loadEventsFromUser()">Load!</button>

@@ -4,8 +4,9 @@
 
 With key bindings: 
  - 'd' -> set a selection
- - 's' -> delete selection
- - 'm' -> merge all selections if they are over each other
+ - 'r' -> remove selection
+ - 'm' -> merge all selections if they are next to each other
+ - 's' -> split selection at the cursor position
  - '->' -> move cursor to right
  - '<-' -> move cursor to left
 

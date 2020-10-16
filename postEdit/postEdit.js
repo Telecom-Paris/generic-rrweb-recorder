@@ -276,6 +276,8 @@ function downRecord(cuttedEvents, cuttedBlob) {
     zip.file("data/events.json", eventBlob);
     zip.file("data/sound.mp3", cuttedBlob);
         
+    document.getElementById('overlay').style.width = "0%";
+
     // Once archive has been generated, we can download it
     zip.generateAsync({type:"blob"})
     .then(function(content) {
@@ -332,6 +334,7 @@ async function doneButton() {
     }
 
     if (confirm("Are you sure you did all your modifications ?") == true) {
+        document.getElementById("overlay").style.width = "100%";
         if (userSelectionMap.length > 0) {
 
             mergeSelection();
@@ -512,15 +515,13 @@ function setListeners() {
                 break;
             case 39: // Right arrow
                 drawCursor(cursorIconData.realPosition + 1);
-                if (eventPointMap.includes(cursorIconData.realPosition - cursorCanvasData.size.left)) {
+                if (eventPointMap.includes(cursorIconData.realPosition - cursorCanvasData.size.left))
                     setReplayerPos(eventPointMap.indexOf(cursorIconData.realPosition - cursorCanvasData.size.left));
-                }
                 break;
             case 37: // Left arrow
                 drawCursor(cursorIconData.realPosition - 1);
-                if (eventPointMap.includes(cursorIconData.realPosition - cursorCanvasData.size.left)) {
+                if (eventPointMap.includes(cursorIconData.realPosition - cursorCanvasData.size.left))
                     setReplayerPos(eventPointMap.indexOf(cursorIconData.realPosition - cursorCanvasData.size.left));
-                }
                 break;
         }
     };
@@ -588,7 +589,7 @@ function setListeners() {
                 console.log(userSelectionMap);
                 isSelectionOverExisting = false;
                 break;
-            case 83: // 's' key
+            case 82: // 'r' key
                 // We detect if the mouse is over a selection
                 console.log("Delete key detected");
                 for (let i = 0; i < userSelectionMap.length; i++){

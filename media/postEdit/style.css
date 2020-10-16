@@ -26,6 +26,34 @@
     color: white;
 }
 
+#overlay-content {
+    position: relative;
+    top: 25%;
+    width: 100%;
+    text-align: center;
+    margin-top: 30px;
+}
+
+#overlay p {
+    padding: 8px;
+    text-decoration: none;
+    color: white;
+    display: block;
+    transition: 0.1s;
+  }
+
+#overlay {
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    z-index: 7;
+    background-color: rgba(82, 82, 82, 0.9);
+    overflow-x: hidden;
+    transition: 0.2s;
+}
+
 #sound-selector, #event-selector { visibility: hidden; }
 
 #sliderBarSound {width: 40%; visibility: hidden;}
