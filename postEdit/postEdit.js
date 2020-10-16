@@ -84,6 +84,8 @@ let replayerData = {currentTime: 0, totalTime: 0};
 
 let audioDom;
 
+let secPerPx;
+
 async function launchRrweb(manualLoad) {
     // Loading data
     if (manualLoad == false) {
@@ -143,8 +145,10 @@ async function launchRrweb(manualLoad) {
             cursorCanvasData.ctx.drawImage(this, 0,0, cursorIconData.size.width, 100);
         }
 
+        replayerData.totalTime = replay.getMetaData().totalTime;
+
         // Set the current timer text
-        document.getElementById('textTimer').innerHTML = "0:00 / " + convertTextTimer(replay.getMetaData().totalTime);
+        document.getElementById('textTimer').innerHTML = "0:00 / " + convertTextTimer(replayerData.totalTime);
 
         // Draw event point on canvas considering their timestamps
         let i;
@@ -156,14 +160,30 @@ async function launchRrweb(manualLoad) {
             eventPointCanvasData.ctx.fill();
         }
 
+        function eventListener() {
+            console.log("AUDIODOM DURATION IS %d / %d", audioDom.duration, replayDivSize);
+            secPerPx = audioDom.duration / replayDivSize;
+            audioDom.removeEventListener('canplay', eventListener);
+        }
+
+        audioDom.addEventListener('canplay', eventListener);
+        
         // Listen for events
         setListeners();
     }
+    else
+        alert("Warning: it seems localstorage elements are not accessible. Please use the manual load buttons");
 }
 
 function convertTextTimer(millis) {
     var minutes = Math.floor(millis / 60000);
     var seconds = ((millis % 60000) / 1000).toFixed(0);
+    return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+}
+
+function convertTextTimerSec(time) {
+    var minutes = Math.floor(time / 60);
+    var seconds = (time - minutes * 60).toFixed(0);
     return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
 }
 
@@ -312,58 +332,40 @@ async function doneButton() {
     }
 
     if (confirm("Are you sure you did all your modifications ?") == true) {
-        if (userSelectionMap.length > 0){
-
-            let toCut = [];
+        if (userSelectionMap.length > 0) {
 
             mergeSelection();
 
             let cutterLib = new mp3cutter("../lib/web-audio-recorder/lib/");
             
-            //for (let i = 0; i < events.length; i++) {
-                //cuttedEvents.push(events[i]);
-            //}
+            for (let i = 0; i < events.length; i++) {
+                cuttedEvents.push(events[i]);
+            }
+
             //Push the 2 first elements because they contains webpage design, etc...
             //recompute first event timestamps
-            //cuttedEvents[0].timestamp = events[2].timestamp;
-            //cuttedEvents[1].timestamp = events[2].timestamp;
+            cuttedEvents[0].timestamp = events[2].timestamp;
+            cuttedEvents[1].timestamp = events[2].timestamp;
 
-            for (let i = 2; i < eventPointMap.length; i++) {
-                for (let k = 0; k < userSelectionMap.length; k++) {
+            //Reverse loop to not mess up with indexes
+            for (let i = eventPointMap.length -1; i >= 2; i--) {
+                for (let k = userSelectionMap.length -1; k >= 0; k--) {
                     if (eventPointMap[i] > userSelectionMap[k].startPosition && eventPointMap[i] < userSelectionMap[k].endPosition) {
                         console.log("I should exclude event number %d from selection", i);
-                        toCut.push(i);
-                        //cuttedEvents.splice(i, 1);
+                        cuttedEvents.splice(i, 1);
                         break;
                     }
                 }
             }
-
-            cuttedEvents.push(events[0]);
-            cuttedEvents.push(events[1]);
-            cuttedEvents[0].timestamp = events[2].timestamp;
-            cuttedEvents[1].timestamp = events[2].timestamp;
-
-            for (let i = 2; i < events.length; i++) {
-                if (!toCut.includes(i))
-                    cuttedEvents.push(events[i]);
-                else
-                    console.log("I do not include item at index %d", i);
-            }
-
             console.log(cuttedEvents);
             
             console.log("Je sais que mon audio dure %f sec et que la taille de la div est de %d, ce qui fait %f sec par px", audioDom.duration, replayDivSize, audioDom.duration / replayDivSize);
-            let secPerPx = audioDom.duration / replayDivSize;
-            console.log("Length of userSelection is %d", userSelectionMap.length);
-            
+                        
             for (let i = 0; i < userSelectionMap.length; i++) {
-                if (i == 0) {
-                    if (userSelectionMap[i].startPosition != 0) {
-                        console.log("Je garde de 0 a %f", userSelectionMap[i].startPosition * secPerPx);
-                        numberOfElementToKeep++;
-                        await cutterLib.cut(audioBlob, 0, userSelectionMap[i].startPosition * secPerPx, audioSplitCallback, 160);
-                    }
+                if (i == 0 && userSelectionMap[i].startPosition != 0) {
+                    console.log("Je garde de 0 a %f", userSelectionMap[i].startPosition * secPerPx);
+                    numberOfElementToKeep++;
+                    await cutterLib.cut(audioBlob, 0, userSelectionMap[i].startPosition * secPerPx, audioSplitCallback, 160);
                 }
                 if (userSelectionMap[i + 1]) {
                     console.log("Je garde de %f a %f", userSelectionMap[i].endPosition * secPerPx, userSelectionMap[i + 1].startPosition * secPerPx);
@@ -382,8 +384,10 @@ async function doneButton() {
     }
 }
 
-
-
+/**
+ * Draw cursor thos given X axe
+ * @param {integer} xAxe The X axe to draw cursor
+ */
 function drawCursor(xAxe) {
     cursorCanvasData.clear();
     cursorIconData.position = xAxe - cursorCanvasData.size.left - cursorIconData.size.width;
@@ -392,6 +396,9 @@ function drawCursor(xAxe) {
     cursorIconData.realPosition = xAxe;
 }
 
+/**
+ * Draw all of users selections
+ */
 function drawUserSelections() {
     eventCanvasData.clear();
     userSelectionMap.forEach(function(item, index) {
@@ -399,9 +406,13 @@ function drawUserSelections() {
     });
 }
 
+/**
+ * Set Rreweb position to index of event
+ * @param {integer} arrayIndex Which event set replayer on
+ */
 function setReplayerPos(arrayIndex) {
     replay.pause(events[arrayIndex].timestamp - events[0].timestamp);
-    document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + convertTextTimer(replay.getMetaData().totalTime);
+    document.getElementById('textTimer').innerHTML = convertTextTimer(replay.getCurrentTime()) + " / " + convertTextTimer(replayerData.totalTime);
 }
 
 function clickPlayButton() {
@@ -422,9 +433,9 @@ function clickPlayButton() {
         console.log(eventsPerSecond);
 
         interval = setInterval(function() {
-                sliderbarValue += Math.ceil(eventsPerSecond);
-                drawCursor(sliderbarValue);
-                //console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
+            sliderbarValue += Math.ceil(eventsPerSecond);
+            drawCursor(sliderbarValue);
+            //console.log("value is now " + document.getElementById('sliderBar').value + " / " + document.getElementById('sliderBar').max);
         }, 100);
                     
         replay.play(replayerData.currentTime);
@@ -602,19 +613,7 @@ function setListeners() {
     cursorCanvas.addEventListener('mousedown', function(event) {
         isMouseDown = true;
         startPosition = event.clientX - cursorCanvasData.size.left;
-        sliderbarValue = startPosition;
-        // Recompute cursor place
-        drawCursor(event.clientX);
-
-        // Compute event position based on cursor position
-        console.log("cursor pointer position is " +  startPosition);
-        console.log(eventPointMap);
-        if (eventPointMap.includes(startPosition)) {
-            console.log("je suis sur un element ! a l'index:" + eventPointMap.indexOf(startPosition));
-            setReplayerPos(eventPointMap.indexOf(startPosition));
-            audioDom.currentTime = replay.getCurrentTime() / 1000;
-            replayerData.currentTime = replay.getCurrentTime();
-        }
+        computeCursorPosition();
     }, false);
 
     cursorCanvas.addEventListener('mouseup', function(event) {
@@ -702,24 +701,7 @@ function setListeners() {
 
             drawUserSelections();
         } else if (isMouseDown) {
-            if (playButtonStatus == "PLAYING")
-                replay.pause();
-            startPosition = event.clientX - cursorCanvasData.size.left;
-            sliderbarValue = startPosition;
-
-            //Recompute cursor place
-            drawCursor(event.clientX);
-            for (let i = 0; i < eventPointMap.length; i++) {
-                if (startPosition > eventPointMap[i] && startPosition < eventPointMap[i] + 10) {
-                    console.log("je suis sur un element ! a l'index:" + i);
-                    setReplayerPos(i);
-                    audioDom.currentTime = replay.getCurrentTime() / 1000;
-                    replayerData.currentTime = replay.getCurrentTime();
-                    break;
-                }
-            }
-            if (playButtonStatus == "PLAYING")
-                replay.play(replayerData.currentTime);
+            computeCursorPosition();
         } else {
             //console.log("position of X mouse is " + event.clientX);
             cursorPosition = event.clientX;
@@ -755,6 +737,38 @@ function setListeners() {
         wavesurfer.zoom(Number(this.value));
         console.log("Zoom on the timebar");
     };
+}
+
+function computeCursorPosition() {
+    if (playButtonStatus == "PLAYING")
+        replay.pause();
+    startPosition = event.clientX - cursorCanvasData.size.left;
+    sliderbarValue = startPosition;
+
+    let occurence = 0;
+
+    //Recompute cursor place
+    drawCursor(event.clientX);
+    audioDom.currentTime = (event.clientX * secPerPx);
+    for (let i = 0; i < eventPointMap.length; i++) {
+        if (startPosition > eventPointMap[i] && startPosition < eventPointMap[i] + 10) {
+            console.log("je suis sur un element ! a l'index:" + i);
+            setReplayerPos(i);
+            
+            console.log("Time computed by rrweb %d", replay.getCurrentTime() / 1000);
+            replayerData.currentTime = replay.getCurrentTime();
+            occurence = 1;
+            break;
+        }
+    }
+
+    if (occurence == 0) {
+        console.log("Time computed by me %d", event.clientX * secPerPx);
+        document.getElementById('textTimer').innerHTML = convertTextTimerSec(event.clientX * secPerPx) + " / " + convertTextTimer(replayerData.totalTime);
+    }
+
+    if (playButtonStatus == "PLAYING")
+        replay.play(replayerData.currentTime);
 }
 
 function updateStatusSoundIcon(rangeBarValue) {
