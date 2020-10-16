@@ -594,11 +594,19 @@ function setListeners() {
                     console.log("iterating over i = %d", i);
                     console.log("Iterating with positions: %d > %d / %d < %d", cursorPosition, userSelectionMap[i].startPosition, event.clientX, userSelectionMap[i].endPosition);
                     if (cursorPosition >= userSelectionMap[i].startPosition && cursorPosition <= userSelectionMap[i].endPosition) {
-                        console.log("We are over element %d, deleting it", i);
-                        userSelectionMap.splice(i, 1);
-                        drawUserSelections();
-                        userOnSelection.isOnSelection = null;
-                        cursorCanvas.style.cursor = "pointer";
+                        console.log("We are over element %d, splitting it", i);
+                        if (userSelectionMap[i].endPosition - cursorPosition < 50)
+                            alert("Cuts cannot be smaller than 50 px");
+                        else {
+                            userSelectionMap.splice(i + 1, 0, {startPosition: cursorPosition, endPosition: userSelectionMap[i].endPosition, size: userSelectionMap[i].endPosition - cursorPosition})
+                            userSelectionMap[i].endPosition = cursorPosition;
+                            userSelectionMap[i].size = userSelectionMap[i].endPosition - userSelectionMap[i].startPosition;
+                            console.log(userSelectionMap);
+                            drawUserSelections();
+                            userOnSelection.isOnSelection = null;
+                            cursorCanvas.style.cursor = "pointer";
+                        }
+                        
                         break;
                     }
                 }
