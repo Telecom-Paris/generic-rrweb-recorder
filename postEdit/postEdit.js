@@ -86,6 +86,11 @@ let audioDom;
 
 let secPerPx;
 
+/**
+ * First function to be launched. Load events and sound
+ * @param {boolean} manualLoad If manualLoad is true, it is loading from custom user upload. 
+ * Default is false -> loading from localstorage
+ */
 async function launchRrweb(manualLoad) {
     // Loading data
     if (manualLoad == false) {
@@ -175,18 +180,29 @@ async function launchRrweb(manualLoad) {
         alert("Warning: it seems localstorage elements are not accessible. Please use the manual load buttons");
 }
 
+/**
+ * Convert millis into formatted format 'MM:ss'
+ * @param {integer} millis given millis
+ */
 function convertTextTimer(millis) {
     var minutes = Math.floor(millis / 60000);
     var seconds = ((millis % 60000) / 1000).toFixed(0);
     return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
 }
 
+/**
+ * Convert seconds into formatted format 'MM:ss'
+ * @param {integer} time given seconds
+ */
 function convertTextTimerSec(time) {
     var minutes = Math.floor(time / 60);
     var seconds = (time - minutes * 60).toFixed(0);
     return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
 }
 
+/**
+ * Upload and Load custom user events and sound
+ */
 function loadEventsFromUser() {
     
     function launchRrwebWhenCustomLoad(){
@@ -235,6 +251,11 @@ function loadEventsFromUser() {
     }
 }
 
+/**
+ * Launch the download automatically
+ * @param {Blob} data Blob containing the zip
+ * @param {*} filename The filename to give to the zip
+ */
 function saveAs(data, filename) {
     // Create invisible link
     const a = document.createElement("a");
@@ -257,6 +278,11 @@ function saveAs(data, filename) {
     document.body.removeChild(a);
 }
 
+/**
+ * Create the zip to download
+ * @param {array} cuttedEvents Cutted events 
+ * @param {blob} cuttedBlob Cutted audio Blob
+ */
 function downRecord(cuttedEvents, cuttedBlob) {
     let zip = new JSZip();
         
@@ -286,6 +312,10 @@ function downRecord(cuttedEvents, cuttedBlob) {
     });
 }
 
+/**
+ * Read a file and return it's content
+ * @param {String} file The filename to read
+ */
 function readTextFile(file) {
     var rawFile = new XMLHttpRequest();
     var isFileValid = false;
@@ -304,6 +334,10 @@ function readTextFile(file) {
         return "error";
 }
 
+/**
+ * Escape all spacial characters and return the result
+ * @param {String} str The string to escape
+ */
 function addslashes(str) {
     return str.replace(/\\/g, '\\\\').
     replace(/\u0008/g, '\\b').
@@ -316,6 +350,9 @@ function addslashes(str) {
     replace(/\//g, '\\/');
 }
 
+/**
+ * Function triggered by the click on 'Done' button
+ */
 async function doneButton() {
     let cuttedEvents = [];
     let audioCuts = [];
@@ -465,6 +502,9 @@ function clickPlayButton() {
     }
 }
 
+/**
+ * Merge all records being sticked together
+ */
 function mergeSelection() {
     let tmpMergeArray = [];
     eventCanvasData.clear();
@@ -505,6 +545,9 @@ function mergeSelection() {
     drawUserSelections();
 }
 
+/**
+ * Set listeners for all events (Ex: click, mousemove, etc...)
+ */
 function setListeners() {
     document.onkeydown = function(event) {
         console.log("onkeydown " + event.keyCode);
@@ -606,7 +649,6 @@ function setListeners() {
                             userOnSelection.isOnSelection = null;
                             cursorCanvas.style.cursor = "pointer";
                         }
-                        
                         break;
                     }
                 }
@@ -633,18 +675,29 @@ function setListeners() {
         }
     };
 
+    /**
+     * Detect mousedown event. 
+     */
     cursorCanvas.addEventListener('mousedown', function(event) {
         isMouseDown = true;
         startPosition = event.clientX - cursorCanvasData.size.left;
         computeCursorPosition();
     }, false);
 
+
+    /**
+     * Detect mouseup event. 
+     */
     cursorCanvas.addEventListener('mouseup', function(event) {
         isMouseDown = false;
         cursorCanvasData.ctx.globalAlpha = 1.0;
         positionCursor = -1;
     }, false);
 
+
+    /**
+     * Detect mousemove event. 
+     */
     cursorCanvas.addEventListener('mousemove', function(event) {
         if (isMouseDown && isShiftPressed) {
             console.log("IsMouseDown is true");
@@ -769,6 +822,9 @@ function setListeners() {
     };
 }
 
+/**
+ * Compute cursor position + replayer position. Called each time the cursor is moved by user
+ */
 function computeCursorPosition() {
     if (playButtonStatus == "PLAYING")
         replay.pause();
@@ -797,6 +853,10 @@ function computeCursorPosition() {
         replay.play(replayerData.currentTime);
 }
 
+/**
+ * Update the sound icon based on value of range bar
+ * @param {integer} rangeBarValue The current value of sound range bar
+ */
 function updateStatusSoundIcon(rangeBarValue) {
     let soundIcon = document.getElementById('soundBarIcon');
                                 
