@@ -12,6 +12,8 @@ Do not forget to clone the repo using ```--recursive``` option
 git clone --recursive https://github.com/Telecom-Paris/generic-rrweb-recorder.git
 ```
 
+To test it, you need to use a server, due to security reasons.
+
 ### How to install it ?
 
 Just include a line in the header of your website :
@@ -66,6 +68,7 @@ Once installed, you can build the documentation using:
 ```jsdoc srcs/*.js README.md -d docs/generated-doc/```
 
 You will find it under the docs folder, in HTML format. ([here](docs/generated-doc))
+You can also find answers to common questions [here](docs/FAQ.md)
 
 ### The minified version
 

@@ -11,4 +11,4 @@ You can learn more about this error [here](https://developer.mozilla.org/en-US/d
 
 Because if the access to the mic is refused, niether rrweb or audio recording will launch.
 
-If you clicked on refused by mistake, reload the page and click on the recording button again.
+If you clicked on refused by mistake, reload the page  or reset the permission for this page and click on the recording button again.
