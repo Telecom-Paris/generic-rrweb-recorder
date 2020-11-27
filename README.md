@@ -4,6 +4,16 @@
 ![](https://img.badgesize.io/Telecom-Paris/generic-rrweb-recorder/dev/min/srcs/recorder.min.js?label=Minified_version)
 ![](https://img.badgesize.io/Telecom-Paris/generic-rrweb-recorder/dev/srcs/recorder.js?compression=gzip)
 
+What is generic-rrweb-recorder ?
+
+Generic-rrweb-recorder is a tool to record the dom of a web page as well as the sound of the microphone.
+
+The advantage compared to a video?
+
+You can copy/paste the text, and the files are extremely light!
+
+### Cloning this repo
+
 This repo is using submodules.
 
 Do not forget to clone the repo using ```--recursive``` option
