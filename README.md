@@ -4,13 +4,17 @@
 ![](https://img.badgesize.io/Telecom-Paris/generic-rrweb-recorder/dev/min/srcs/recorder.min.js?label=Minified_version)
 ![](https://img.badgesize.io/Telecom-Paris/generic-rrweb-recorder/dev/srcs/recorder.js?compression=gzip)
 
-What is generic-rrweb-recorder ?
+### What is generic-rrweb-recorder ?
 
 Generic-rrweb-recorder is a tool to record the dom of a web page as well as the sound of the microphone.
 
 The advantage compared to a video?
 
 You can copy/paste the text, and the files are extremely light!
+
+Test it [here](https://telecom-paris.github.io/generic-rrweb-recorder/example.html)
+
+If you want to know how it works under the hood, please see [this](docs/how-it-works.md) doc
 
 ### Cloning this repo
 
@@ -98,6 +102,8 @@ This project use the following libraries:
 [WebAudioRecorder](https://github.com/higuma/web-audio-recorder-js)
 
 [ConcatenateBlob](https://github.com/muaz-khan/ConcatenateBlobs)
+
+[simple-mp3-cutter](https://github.com/lubenard/simple-mp3-cutter)
 
 Because the images we use are free, here is the websites where we found them:
 - https://www.flaticon.com
