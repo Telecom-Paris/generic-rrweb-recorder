@@ -5,20 +5,14 @@ Genenric-rrweb-recorder is based on 2 major tools:
     - [rrweb](https://github.com/rrweb-io/rrweb)
     - [WebAudioRecorder](https://github.com/higuma/web-audio-recorder-js)
 
-As soon as you click the record Button, the webAudioRecorder launch.
+When loadScripts is launched (either manually via ```loadScripts()``` or automatically via ```startRecord()```), it download and add the scripts file to the header of the webpage.
 
-It will record your audio via the mic of your computer
+Once ```startRecord()``` is launched, it check those scripts have been loaded, ask authorisations for mic access, and start recording.
 
-Rrweb works by registering the dom once, then all of your events (mouse, keyboard) into a array of events, which lead to really small files.
+One ```stopRecord()``` is launched, it stop using mic access and encode into the wanted codec.
 
-Once the record is finished, the audio is encoded into MP3. The array of events is transformed into json.
-
-If you click on the download Button, the script integrate the json events into a replay webpage.
-
-We are forced to use this technique to bypass security measures that does not allow us to automatically load a local json file.
-
-Then, [jszip](https://github.com/Stuk/jszip) create a zip containing the json events, the mp3 audio, rrweb to play it locally, and the replay webpage.
+If you trigger ```downRecord()```, [jszip](https://github.com/Stuk/jszip) create a zip containing the json events, the audio file, rrweb to play it locally, and the replay webpage.
 
 This archive is available for download, and allow you to replay it offline.
 
-To give a idea of the smallness of the archive, 1 minute of recording on the example page ([here](https://telecom-paris.github.io/generic-rrweb-recorder/example)) is ~ 1.4 mb (everything included)
+To give a idea of the smallness of the archive, 1 minute of recording on the example page ([here](https://telecom-paris.github.io/generic-rrweb-recorder/example)) is ~ 1.4 mb (archive size)

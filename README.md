@@ -45,34 +45,32 @@ To include the minified version, you can use:
 ```
 See [here](#the-minified-version) for more info about the minified version.
 
-The script takes care of the rest.
+### How to use it ?
 
-If you decide not to start the script when the page is loaded, you can launch it doing this:
-```
-new Recorder();
-```
-in a script tag
+First, you need to create a new recorder Object:
+```let myRecorder = new Recorder();```
 
-### Customize it as you want:
+If you want to load the scripts required by the recorder:
+```myRecorder.loadScripts();```
 
-The script has a basic configuration, but here is what you can customize:
-- Path to the script folder /!\ should end with a ```/``` /!\ (default is **generic-rrweb-recorder**)
-- if script is lauching when page is loaded (default is **true**)
-- position (default is **"bottom-right"**)
-  list of available position:
-  - bottom
-  - bottom-right
-  - bottom-left
-  - top
-  - top-right
-  - top-left
-  - middle
-  - middle-right
-  - middle-left
-- if the buttons are movable (default is **true**)
-- if the log is printed or not (default is **true**)
-- Color of the record Button (The main Button) (default is **red**);
-- Color of the pause / download Button (default is **yellow**);
+If you do not want to handle this, the ```startRecord()``` function handles it for you.
+
+This option is only available if you want to load those scripts directly after your webpage.
+
+To start a record:
+```myRecorder.startRecord();```
+
+To pause a record:
+```myRecorder.pauseRecord();```
+
+To resume a record:
+```myRecorder.resumeRecord();```
+
+To stop a record:
+```myRecorder.stopRecord();```
+
+To dowbload a record as a zip file:
+```myRecorder.downRecord();```
 
 ### More documentation
 
@@ -86,10 +84,6 @@ You can also find answers to common questions [here](docs/FAQ.md)
 
 ### The minified version
 
-To make the minified version, you need [Uglifyjs-folder](https://github.com/ionutvmi/uglifyjs-folder).
-
-Once installed, you can use it doing:
-```uglifyjs-folder -e -o min/ srcs/```
 
 ### Licences and credits
 
@@ -104,8 +98,3 @@ This project use the following libraries:
 [ConcatenateBlob](https://github.com/muaz-khan/ConcatenateBlobs)
 
 [simple-mp3-cutter](https://github.com/lubenard/simple-mp3-cutter)
-
-Because the images we use are free, here is the websites where we found them:
-- https://www.flaticon.com
-- https://material.io/resources/icons
-- https://icons8.com/
