@@ -286,14 +286,14 @@ class Recorder {
 		return ;
 	}
 
-	get config(){
+	get config() {
 		return this.config;
 	}
-
+	
 	loadScripts() {
 		// We include Rrweb
 		let that = this;
-		loadJS([this.config.libPath + "lib/rrweb/dist/rrweb.min.js", this.config.libPath + "lib/web-audio-recorder/lib/WebAudioRecorder.js"], function() {	
+		loadJS([this.config.libPath + "lib/rrweb/dist/rrweb.min.js", this.config.libPath + "lib/web-audio-recorder/lib/WebAudioRecorder.js"], function() {
 			// Once script has been loaded, launch the rest of the code
 			logger("Scripts have been loaded!");
 			areRecordScriptsLoaded = true;
@@ -369,6 +369,7 @@ class Recorder {
 		} else {
 			logger("Warning: Scripts have not been loaded. Manual load");
 			this.manualScriptLoad = true;
+			console.log(this.config);
 			this.loadScripts();
 		}
 	}
