@@ -301,7 +301,16 @@ class Recorder {
 				that.startRecord();
 		});
 	}
-	
+
+	/**
+	 * 
+	 * @param {Function} callback Callback called when encoding is complete.
+	 */
+	onEncodingComplete(callback) {
+		this.callbackWhenOnCompleted = callback;
+		console.log("When encoding is complete, should call " + callback);
+	}
+
 	/**
  	* Launch the audio and screen record
  	*/
@@ -327,6 +336,7 @@ class Recorder {
 
 				isEncodingOver = false;
 
+				console.log(that.callbackWhenOnCompleted);
 				audioRecorder = new WebAudioRecorder(input, {
 					workerDir: that.config.libPath + "lib/web-audio-recorder/lib/",
 					encoding: that.config.encodingType,
@@ -339,14 +349,18 @@ class Recorder {
 					}
 				});
 
+				console.log(that.callbackWhenOnCompleted);
 				audioRecorder.onComplete = function(recorder, blob) {
 					logger("Encoding complete");
 					logger("Audio Blob is available here: " + URL.createObjectURL(blob));
 					audioParts.push(blob);
-                    // If the recorder has been fully stopped, print the downloadButton
+                    // If the recorder has been fully stopped, call the callback
 					if (recorderState == "STOPPED"){
 						isEncodingOver = true;
 						//Say encoding is complete
+						if (that.callbackWhenOnCompleted != undefined && typeof(that.callbackWhenOnCompleted) === "function") {
+							that.callbackWhenOnCompleted();
+						}
 					}
 				}
 
