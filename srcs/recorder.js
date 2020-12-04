@@ -168,21 +168,20 @@ function logger(stringLog){
 		console.log("generic-rrweb-recorder: " + stringLog);
 }
 
-function compileDataForDownload() {
+function compileDataForDownload(audioParts) {
 	//avoid concatenating if there is only one element
 	if (audioParts.length > 1) {
 		logger("Loading ConcatenateBlobs");
 		// We concatenate all audio parts.
 		loadJS([config.libPath + "lib/concatenate-blob/ConcatenateBlobs.js"], function () {
 			ConcatenateBlobs(audioParts, 'audio/mpeg3', function(resultingBlob) {
-				soundBlob = resultingBlob;
+				return resultingBlob;
 			});
-			
 		});
 	}
 	else {
 		logger("No need to load ConcatenateBlobs");
-		soundBlob = audioParts[0];
+		return audioParts[0];
 	}
 }
 
@@ -274,6 +273,8 @@ class Recorder {
 
 	manualScriptLoad = false;
 
+	callbackWhenOnCompleted = undefined;
+
 	constructor(libPath, debugLog, encodingType) {
 		if (libPath != undefined)
 			this.config.libPath = libPath;
@@ -303,15 +304,6 @@ class Recorder {
 	}
 
 	/**
-	 * 
-	 * @param {Function} callback Callback called when encoding is complete.
-	 */
-	onEncodingComplete(callback) {
-		this.callbackWhenOnCompleted = callback;
-		console.log("When encoding is complete, should call " + callback);
-	}
-
-	/**
  	* Launch the audio and screen record
  	*/
 	startRecord() {
@@ -336,7 +328,6 @@ class Recorder {
 
 				isEncodingOver = false;
 
-				console.log(that.callbackWhenOnCompleted);
 				audioRecorder = new WebAudioRecorder(input, {
 					workerDir: that.config.libPath + "lib/web-audio-recorder/lib/",
 					encoding: that.config.encodingType,
@@ -349,13 +340,13 @@ class Recorder {
 					}
 				});
 
-				console.log(that.callbackWhenOnCompleted);
 				audioRecorder.onComplete = function(recorder, blob) {
 					logger("Encoding complete");
 					logger("Audio Blob is available here: " + URL.createObjectURL(blob));
 					audioParts.push(blob);
-                    // If the recorder has been fully stopped, call the callback
-					if (recorderState == "STOPPED"){
+					that.soundBlob = compileDataForDownload(audioParts);
+					// If the recorder has been fully stopped, call the callback
+					if (recorderState == "STOPPED") {
 						isEncodingOver = true;
 						//Say encoding is complete
 						if (that.callbackWhenOnCompleted != undefined && typeof(that.callbackWhenOnCompleted) === "function") {
@@ -480,14 +471,16 @@ class Recorder {
  	* It also put files in the zip for download
  	*/
 	downRecord() {
+		let that = this;
+		console.log(this.soundBlob);
 		//Load Jszip (minified Because it load faster)
 		loadJS([this.config.libPath + "./lib/jszip/dist/jszip.min.js"], function() {
 			let zip = new JSZip();
 
-			let textData = readTextFile("./download/download.html");
-        	let textDataEnd = readTextFile("./download/download_end.html");
-			jsData = readTextFile("./lib/rrweb/dist/rrweb.min.js");
-			cssData = readTextFile("./lib/rrweb/dist/rrweb.min.css");
+			let textData = readTextFile(that.config.libPath + "download/download.html");
+        	let textDataEnd = readTextFile(that.config.libPath + "download/download_end.html");
+			jsData = readTextFile(that.config.libPath + "lib/rrweb/dist/rrweb.min.js");
+			cssData = readTextFile(that.config.libPath + "lib/rrweb/dist/rrweb.min.css");
         	// We add thoses files to the zip archive
 
 			console.log(addslashes(JSON.stringify(events)));
@@ -498,7 +491,7 @@ class Recorder {
 			zip.file("js/rrweb.min.js", jsData);
 			zip.file("js/rrweb.min.css", cssData);
 			zip.file("data/events.json", eventBlob);
-			zip.file("data/sound.mp3", soundBlob);
+			zip.file("data/sound.mp3", that.soundBlob);
 
 			// Once archive has been generated, we can download it
 			zip.generateAsync({type:"blob"}).then(function(content) {
