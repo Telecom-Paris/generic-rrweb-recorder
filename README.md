@@ -12,7 +12,7 @@ The advantage compared to a video?
 
 You can copy/paste the text, and the files are extremely light!
 
-Test it [here](https://telecom-paris.github.io/generic-rrweb-recorder/example.html)
+Test it [here](https://telecom-paris.github.io/generic-rrweb-recorder-ui/example.html)
 
 If you want to know how it works under the hood, please see [this](docs/how-it-works.md) doc
 
